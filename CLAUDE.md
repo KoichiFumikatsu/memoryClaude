@@ -4,6 +4,7 @@
 
 At the start of every session, read the following files before doing anything else:
 
+- [memory/personality.md](memory/personality.md) — **read first** — defines how to think, communicate, and make decisions for this user
 - [memory/user.md](memory/user.md) — who the user is, their role, expertise, and goals
 - [memory/preferences.md](memory/preferences.md) — how the user wants Claude to behave
 - [memory/decisions.md](memory/decisions.md) — past decisions so they don't get re-litigated
