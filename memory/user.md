@@ -65,6 +65,8 @@ Cali · 2016 – 2021
 | KelsieApp | kelsieapp.vercel.app | Next.js 16, Supabase, Vercel | Arquitectura y dirección; implementación con IA |
 | Altergeist | danielos8900.itch.io/altergeist | — | Codesarrollador (Platzi Game Jam 2020) |
 
+| Voice Assistant | /home/kelsie/voice-assistant/ | Python, Claude API, faster-whisper, gTTS, Google Calendar | Arquitectura y desarrollo con IA |
+
 **Pendiente:** Localfy no está en GitHub (código en local). Repos de GitHub desactualizados.
 
 **Nota KelsieApp:** Koichi diseñó la arquitectura, estructura de módulos y visión de producto. La implementación fue dirigida por él con asistencia de IA. En entrevistas: "arquitectura diseñada y dirección de implementación con asistencia de IA" — no presentar como desarrollo propio completo.
