@@ -27,5 +27,3 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-07] Delegación operativa — metodología acordada** — Koichi lista tareas donde es el único que sabe resolverlas → se convierten en documentación estructurada → se asigna formalmente a alguien del equipo.
 *Estado: pendiente de iniciar. Koichi debe entregar lista inicial.*
-
-<!-- hook-test -->
