@@ -6,7 +6,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "cd 'C:/xampp/htdocs/ClaudeMemory' && git add memory/ && git diff --cached --quiet || (git commit -m 'memory: auto-update [session end]' && git push origin main) 2>/dev/null || true",
+            "command": "cd /home/kelsie/memoryClaude-main && git add memory/ && git diff --cached --quiet || (git commit -m 'memory: auto-update [session end]' && git push origin main) 2>/dev/null || true",
             "timeout": 30,
             "statusMessage": "Saving memory to GitHub..."
           }
