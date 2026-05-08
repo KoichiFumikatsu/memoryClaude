@@ -27,3 +27,12 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-07] Delegación operativa — metodología acordada** — Koichi lista tareas donde es el único que sabe resolverlas → se convierten en documentación estructurada → se asigna formalmente a alguien del equipo.
 *Estado: pendiente de iniciar. Koichi debe entregar lista inicial.*
+
+**[2026-05-08] AZCKeeper — regla de prueba de escritorio** — cada parche aplicado a AZCKeeper debe tener prueba de escritorio que confirme flujo, datos enviados y recibidos. No dar un hallazgo por cerrado sin esa verificación.
+*Why: aplicación en producción con 200+ usuarios sin acceso directo a equipos.*
+
+**[2026-05-08] AZCKeeper — keeper_device_locks** — tabla huérfana. El lock real es por policy_json (blocking.enableDeviceLock). No usar keeper_device_locks como referencia de estado de bloqueo.
+*Why: 0 filas, ningún código la lee ni escribe actualmente.*
+
+**[2026-05-08] AZCKeeper — force-handshake** — el endpoint POST /client/force-handshake NO es llamado por el panel. El panel tiene su propia SQL inline en policies.php:123. El endpoint estaba expuesto sin auth y es código muerto desde el panel.
+*Why: confusión entre ruta API y funcionalidad del panel.*
