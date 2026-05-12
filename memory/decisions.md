@@ -36,3 +36,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-08] AZCKeeper — force-handshake** — el endpoint POST /client/force-handshake NO es llamado por el panel. El panel tiene su propia SQL inline en policies.php:123. El endpoint estaba expuesto sin auth y es código muerto desde el panel.
 *Why: confusión entre ruta API y funcionalidad del panel.*
+
+**[2026-05-12] Gaming en Linux — GE-Proton resuelve juegos japoneses** — Umamusume Pretty Derby (Steam) en Ubuntu 24.04 GNOME+Xorg funciona con GE-Proton10-34. Proton Experimental deja pantalla en blanco. Steam instalado como snap en `/home/kelsie/snap/steam/`.
+*Why: Proton Experimental no renderiza el downloader de Cygames; GE-Proton tiene parches específicos para juegos japoneses.*
+
+**[2026-05-12] Wallpapers animados en GNOME+Xorg — sin solución limpia** — linux-wallpaperengine compilado en `/home/kelsie/linux-wallpaperengine/`. GNOME ignora X root window; xwinwrap no funciona con GNOME porque Mutter dibuja encima. Hanabi (extensión GNOME) no quedó instalada correctamente. Wallpaper engine de Steam corre vía Proton y no puede afectar el escritorio Linux.
+*Why: GNOME+Xorg no tiene soporte nativo para wallpapers animados sin extensiones específicas.*
