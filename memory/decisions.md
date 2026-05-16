@@ -54,3 +54,12 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-15] Compañero — HealthKit/Health Connect diferido a v2** — La integración con health (pub.dev) se deja para v2. En v1 el movimiento se verifica por acelerómetro (sensors_plus), el sueño por proxy (pantalla apagada + teléfono estático), el agua por honor system.
 *Why: simplifica el MVP y evita el proceso de aprobación de Health API en tiendas para v1.*
+
+**[2026-05-16] KelsieApp — ConfirmSheet como patrón estándar de destructivos** — Todos los `confirm()` nativos del browser fueron eliminados de KelsieApp. El componente `components/ui/ConfirmSheet.tsx` es el único patrón válido para confirmaciones de eliminación. Se exporta desde `components/ui/index.ts`.
+*Why: `confirm()` bloquea el hilo, rompe el design system y no funciona en ciertos contextos de WebView/Vercel. ConfirmSheet usa el BottomSheet existente con props `label`, `onConfirm`, `onClose`, `confirmLabel?`, `title?`.*
+
+**[2026-05-16] KelsieApp — Touch targets mínimos 44×44px globales** — Regla no negociable en todos los módulos. Icon-only buttons usan `min-w-[44px] min-h-[44px] flex items-center justify-center` (Tailwind) o `{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }` (inline style). FABs `h-12 w-12` = 48px ya cumplen.
+*Why: usuarios finales con TDAH y espectro autista. WCAG 2.5.5 Level AA.*
+
+**[2026-05-16] KelsieApp — aria-label en icon-only buttons (no title)** — El atributo `title` no es leído consistentemente por screen readers en mobile. Todos los botones con solo un ícono deben usar `aria-label` descriptivo en español.
+*Why: `title` fue encontrado en todos los módulos; reemplazado sistemáticamente.*
