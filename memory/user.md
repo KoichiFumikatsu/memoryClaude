@@ -71,6 +71,7 @@ Cali · 2016 – 2021
 | Altergeist | danielos8900.itch.io/altergeist | — | Codesarrollador (Platzi Game Jam 2020) |
 
 | Voice Assistant | /home/kelsie/voice-assistant/ | Python, Claude API, faster-whisper, gTTS, Google Calendar | Arquitectura y desarrollo con IA |
+| Compañero | Pre-producción (sin URL) | Flutter, Supabase, Firebase, Rive | Dev + pixel art placeholder; arte 3D clay render: Mar |
 
 **Pendiente:** Localfy no está en GitHub (código en local). Repos de GitHub desactualizados.
 
