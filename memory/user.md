@@ -55,6 +55,11 @@ Cali · 2016 – 2021
 **Videovigilancia:** DVR, instalación y configuración de cámaras
 **Herramientas:** GitHub, GitHub Actions, VS Code + Claude Code, Omada REST API
 
+## Gaming Setup (Linux)
+- **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`
+- Requiere flag `--no-sandbox` (Electron sandbox issue en Linux)
+- .desktop en `~/.local/share/applications/dofus.desktop` y `~/Desktop/dofus.desktop`
+
 ## Projects in Production
 
 | Proyecto | URL | Stack | Rol |
