@@ -16,6 +16,12 @@ Solo manejan soporte operativo. No tienen expertise en: Linux/servidores, gesti�
 **danielos8900** — codesarrollador en Altergeist (Platzi Game Jam 2020).
 Referencia: danielos8900.itch.io/altergeist. Sin contexto adicional registrado. [2026-05-07]
 
+**Mar** — artista y diseñadora del proyecto Compañero. [2026-05-15]
+Produce todo el arte 3D clay render en Blender: concepto, mundos por hábito, evolución del Blob, expresiones, animaciones. Exporta sprite sheets PNG con alpha para integrar en Flutter. No es co-developer de código. Outputs para ella deben incluir specs técnicas precisas (resolución, FPS, formato) antes de cada batch de renders.
+
+**Henao2007** — aprendiz (practicante) con acceso al repo AZCKeeper. [2026-05-08]
+Trabaja en la rama `desarrollo`. Sus cambios deben revisarse por Koichi antes de merge a `master`. Nivel: básico/operativo; no tiene expertise en el stack del proyecto.
+
 ---
 
-*Nota: esta sección tiene datos limitados. Agregar nombres, roles y contexto de personas relevantes a medida que aparezcan en sesiones.*
+*Nota: agregar nombres, roles y contexto de personas relevantes a medida que aparezcan en sesiones.*

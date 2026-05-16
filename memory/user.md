@@ -51,6 +51,7 @@ Cali · 2016 – 2021
 **VoIP:** Grandstream UCM 6301/6308, SIP trunking, GDMS cloud
 **Backend:** C# .NET 8, PHP 8 (MVC vanilla), MySQL, REST APIs, JavaScript vanilla
 **Frontend/Cloud:** Next.js 16, React 19, TypeScript strict, Tailwind CSS 4, Alpine.js, Supabase, Vercel
+**Mobile:** Flutter (Dart) — iOS + Android simultáneo (stack de Compañero)
 **Email:** MX, DMARC, SPF, gestión de dominios
 **Videovigilancia:** DVR, instalación y configuración de cámaras
 **Herramientas:** GitHub, GitHub Actions, VS Code + Claude Code, Omada REST API
@@ -69,7 +70,6 @@ Cali · 2016 – 2021
 | Localfy | localfy.com.co | PHP, JS vanilla | Backend + estructura visual (freelance) |
 | KelsieApp | kelsieapp.vercel.app | Next.js 16, Supabase, Vercel | Arquitectura y dirección; implementación con IA |
 | Altergeist | danielos8900.itch.io/altergeist | — | Codesarrollador (Platzi Game Jam 2020) |
-
 | Voice Assistant | /home/kelsie/voice-assistant/ | Python, Claude API, faster-whisper, gTTS, Google Calendar | Arquitectura y desarrollo con IA |
 | Compañero | Pre-producción (sin URL) | Flutter, Supabase, Firebase, Rive | Dev + pixel art placeholder; arte 3D clay render: Mar |
 

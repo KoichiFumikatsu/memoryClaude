@@ -42,3 +42,15 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-12] Wallpapers animados en GNOME+Xorg — sin solución limpia** — linux-wallpaperengine compilado en `/home/kelsie/linux-wallpaperengine/`. GNOME ignora X root window; xwinwrap no funciona con GNOME porque Mutter dibuja encima. Hanabi (extensión GNOME) no quedó instalada correctamente. Wallpaper engine de Steam corre vía Proton y no puede afectar el escritorio Linux.
 *Why: GNOME+Xorg no tiene soporte nativo para wallpapers animados sin extensiones específicas.*
+
+**[2026-05-15] Compañero — stack Flutter** — Flutter (Dart) sobre React Native para el juego móvil Compañero.
+*Why: mejor soporte de animaciones 2D, una sola codebase iOS+Android, y el pipeline de arte (sprites pre-renderizados) encaja mejor con Flutter que con RN.*
+
+**[2026-05-15] Compañero — arte como sprites pre-renderizados** — Mar renderiza cada estado/expresión/animación del Blob en Blender y exporta sprite sheets PNG con alpha. No se usa un motor 3D en el cliente.
+*Why: mantiene la fidelidad visual del clay render 3D sin cambiar el stack del cliente ni requerir Blender en runtime.*
+
+**[2026-05-15] Compañero — Hábitos arte ≠ Mecánica en v1 (Opción A, pendiente confirmación)** — Los mundos visuales se llaman "Sueño+Conexión" e "Hidratación+Nutrición" pero los stats internos son solo Sueño e Hidratación. Nutrición y Conexión son flavor narrativo en v1 sin sistema propio.
+*Why: no hay mecanismo de verificación viable para Nutrición (comida) ni Conexión (social) en v1. Se implementan como stats reales en v2. Pendiente aprobación del dueño del producto.*
+
+**[2026-05-15] Compañero — HealthKit/Health Connect diferido a v2** — La integración con health (pub.dev) se deja para v2. En v1 el movimiento se verifica por acelerómetro (sensors_plus), el sueño por proxy (pantalla apagada + teléfono estático), el agua por honor system.
+*Why: simplifica el MVP y evita el proceso de aprobación de Health API en tiendas para v1.*

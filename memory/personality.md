@@ -84,9 +84,17 @@ This appears consistently across all project files. Apply it everywhere:
 ### Kelsie_App
 - Next.js 16 + React 19 + TypeScript strict + Supabase + Tailwind CSS 4 + Vercel
 - No REST API layer — Server Actions only
-- Aesthetic: gacha games (Arknights, HSR, WuWa) — glass panels, glow effects
+- Design system: "Clean Operational" — palette `#F2F0EB` bg, `#191917` text, semantic color per module; JetBrains Mono + DM Sans. NOT gacha/glass/glow.
 - UX neurodivergent: ADHD (fast input, visual feedback, gamification) + autism spectrum (consistency, semantic colors, predictability)
 - Localized for Colombia: COP, `America/Bogota`, `es-CO`
+
+### Compañero
+- Flutter (Dart) — iOS + Android simultáneo
+- Life Sim / Habit Game con mascota virtual (Blob) que evoluciona según hábitos reales del jugador
+- Arte: clay render 3D en Blender (artista: Mar), sprites pre-renderizados integrados en Flutter
+- Backend: Supabase + Firebase Cloud Messaging + Rive (animaciones UI)
+- Pre-producción desde 2026-05-15. GDD v0.1 generado. Co-dev con Mar.
+- Equipo: Koichi (dev + pixel art placeholder) + Mar (arte 3D + diseño)
 
 ### Infrastructure
 - TP-Link Omada SDN (ER707-M2, OC200), multi-WAN (Liberty static /31 + Movistar + Claro + Emcali pending)
