@@ -93,8 +93,10 @@ This appears consistently across all project files. Apply it everywhere:
 - Life Sim / Habit Game con mascota virtual (Blob) que evoluciona según hábitos reales del jugador
 - Arte: clay render 3D en Blender (artista: Mar), sprites pre-renderizados integrados en Flutter
 - Backend: Supabase + Firebase Cloud Messaging + Rive (animaciones UI)
-- Pre-producción desde 2026-05-15. GDD v0.1 generado. Co-dev con Mar.
+- Pre-producción desde 2026-05-15. GDD v0.1 generado. Repo en `/home/kelsie/projects/companero/`. PLAN.md creado con análisis de herramientas y fases.
 - Equipo: Koichi (dev + pixel art placeholder) + Mar (arte 3D + diseño)
+- Rol de Koichi: implementador + sugeridor técnico. Las ideas y dirección vienen de Mar y terceros. No es el product owner.
+- Pendiente: confirmar stack (Riverpod, Isar, Flame, GoRouter, RevenueCat, Codemagic), cerrar modelo de monetización, specs con Mar, setup Flutter, GitHub remote, Firebase, Supabase.
 
 ### Infrastructure
 - TP-Link Omada SDN (ER707-M2, OC200), multi-WAN (Liberty static /31 + Movistar + Claro + Emcali pending)
