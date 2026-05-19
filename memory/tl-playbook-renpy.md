@@ -503,6 +503,11 @@ Cambiar idioma desde Preferences → Language → Español.
 | Multi-line strings con `\n` real (LF físico dentro del string) | Compile error `Could not parse string. Perhaps you left out a " at the end of the first line.` | `tools/tl/_fix_multiline_strings.py <tl_dir>` une líneas con `\n` literal. MT a veces produce esto cuando el source contenía `\n` literal y respondió con salto de línea real. |
 | Variable `[var]` perdida dentro de `{i}...{/i}` | Lint VAR detecta. En juego sale `{i} bla{/i}` o `{i}{/i}` vacío. | Fix manual línea por línea (caso típico: `[player_name]` se pierde al traducir). |
 | `archive.rpa` con fuentes empaquetadas | `check_fonts.py` no encuentra `.ttf/.otf` en `game/fonts/` | `tools/tl/extract_fonts_from_rpa.py <archive.rpa>` extrae .ttf/.otf usando el índice pickle. Probado con Tropicali (4.14 GB rpa, 3 fuentes recuperadas). |
+| Tooltips / hover text en inglés aunque `tl/<lang>/` esté completa | Strings en dicts Python (`{"name": "Guild Roster"}`) sin `_()` wrapper — el sistema tl de Ren'Py los ignora completamente | Editar el `.rpy` source añadiendo `_()`: `{"name": _("Guild Roster")}`. Para strings con `.format()`: siempre `_("string {}").format(val)` — NUNCA `_("string {}".format(val))`. Strings en bloques `define` con `_()` también funcionan (Ren'Py evalúa `define` después de cargar el idioma). |
+| `{lore="content"}` da 25 "end of line expected" tras MT | El MT reemplaza `{lore=\"content\"}` (escaped) por `{lore="content"}` (literal), lo que Ren'Py interpreta como cierre del string | Post-fix obligatorio tras traducir lore tags: re-escapar con regex `\{lore="([^"{}]*)"(\.?\})` → `{lore=\"$1\"$2}`. El script `tools/tl/_translate_lore_tags.py` aplica esta corrección automáticamente. |
+| Tags `{lore=...}` no traducidos (65+ en 21 archivos) | El pipeline MT omite el contenido de lore tags porque no son diálogo estándar | Usar `tools/tl/_translate_lore_tags.py`: extrae todos los lore tags de `tl/<lang>/`, hace batch a OpenAI gpt-4.1-nano, reaplica in-place. Maneja formatos `{lore=texto}` y `{lore="texto".}`. OpenAI puede devolver `{"0": "...", "1": "..."}` en vez de array — el script maneja ambos. |
+| Scanner de tags reporta false positives masivos en `{color}`, `{size}`, `{font}` | Tags paramétricos (`{color=#xx}`) excluidos de opens pero no de closes → aparecen como "0 opens, 1 close" | Excluir de AMBOS stacks: `PARAM_TAGS = {'color', 'alpha', 'size', 'font', 'outlinecolor', 'lore', 'image', 'a'}`. También excluir self-closing: `SELFCLOSE = {'nw', 'p', 'fast', 'w', 'vbar', 'clear', 'space', 'done', 'cps'}`. |
+| `{done}` reportado como unclosed por el linter | `{done}` es un tag Ren'Py self-closing que marca fin de animación de texto — no tiene `{/done}` | Añadir `done` al conjunto de self-closing tags en el scanner. No es un error. |
 
 ---
 
@@ -523,4 +528,5 @@ Cambiar idioma desde Preferences → Language → Español.
 | [tools/tl/apply_canon.py](../tools/tl/apply_canon.py) | Pre-llenado glosario desde canon |
 | [tools/tl/strip_rpa_entries.py](../tools/tl/strip_rpa_entries.py) | Reescribe índice .rpa quitando entradas por prefijo (in-place, con backup) |
 | [tools/tl/tl-es-glossary.json](../tools/tl/tl-es-glossary.json) | Glosario base (extender por juego) |
+| [tools/tl/_translate_lore_tags.py](../tools/tl/_translate_lore_tags.py) | Traduce contenido de `{lore=...}` tags en tl/spanish/ vía OpenAI batch. Post-fix de re-escapado incluido. |
 | [memory/tl-es-style.md](tl-es-style.md) | Guía de estilo ES |

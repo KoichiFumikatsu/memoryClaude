@@ -11,6 +11,27 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 ## Historial
 
+### 2026-05-19 — Adventurer Trainer: tooltips EN → ES (strings en dicts Python sin `_()`)
+**Contexto:** El juego (Ren'Py) tenía todos los tooltips de worldmap, buffs, guildwork y guild_upgrades en inglés aunque `tl/spanish/` estuviera completa. Los strings vivían en dicts Python (`{"name": "Guild Roster", ...}`) sin `_()`, por lo que el sistema tl de Ren'Py los ignoraba completamente.
+**Decisión:** Editar el source del juego (`game/scripts/`) para envolver esos strings con `_()`. Para el `_()` aplicado a strings con `.format()`, el orden correcto es `_("string {}").format(val)` — nunca `_("string {}".format(val))` (evalúa antes del wrap). Strings en `define` blocks con `_()` también funcionan (Ren'Py evalúa `define` después de cargar el idioma desde persistent).
+**Razón:** sin `_()` el sistema de traducción de Ren'Py no genera entrada en `tl/<lang>/` ni busca equivalente — el string pasa literal al render.
+**Archivos modificados en source:** `game/scripts/worldmap.rpy`, `game/scripts/adventuring/buffs.rpy`, `game/scripts/guild/guildwork.rpy`, `game/scripts/guild/guild_upgrades.rpy`, `game/scripts/quest_selection.rpy`, `game/scripts/adventuring/party.rpy`.
+**Alternativas descartadas:** traducir solo en tl/ sin tocar source — imposible sin `_()` en el source.
+
+### 2026-05-19 — Adventurer Trainer: traducción masiva de tags `{lore=...}` con OpenAI
+**Contexto:** 65 lore tags distribuidos en 21 archivos dentro de `tl/spanish/` tenían contenido en inglés. El tag tiene dos formatos: `{lore=texto sin comillas}` y `{lore="texto con comillas".}`. El MT anterior los había omitido. Tras traducirlos, el MT reemplazó `\"content\"` (comillas escapadas en el .rpy) por `"content"` literal → 25 errores "end of line expected" porque Ren'Py interpretaba el `"` como cierre del string.
+**Decisión:** Crear `tools/tl/_translate_lore_tags.py`: extrae lore tags de todos los .rpy de tl/spanish/, manda batch a OpenAI gpt-4.1-nano, reemplaza in-place preservando estructura del tag. Post-fix obligatorio: re-escapar `{lore="content"}` → `{lore=\"content\"}` con regex `\{lore="([^"{}]*)"(\.?\})` → `{lore=\"$1\"$2}`.
+**Razón:** batch único a OpenAI es más eficiente que traducir manualmente 65 strings en 21 archivos.
+**Trampa crítica:** OpenAI a veces devuelve `{"0": "trad1", "1": "trad2", ...}` en vez de `["trad1", "trad2"]`. El script maneja ambos formatos.
+**Alternativas descartadas:** traducir manualmente (65 strings en 21 archivos, costoso); regex pre-MT sobre source EN (tocaría el juego original).
+
+### 2026-05-19 — Adventurer Trainer: scanner de tags rotos + fix masivo 30 líneas
+**Contexto:** La pasada MT dejó 30+ líneas con tags Ren'Py rotos (`{b}`, `{i}`, `{lore}`) — openers omitidos, closers dobles, sentinels `ZT000Z` literales, palabras en inglés en medio de traducciones. El linter existente no distinguía tags paramétricos (`{color=#xx}`, `{size=N}`) de tags paired (`{b}`, `{i}`), generando falsos positivos masivos.
+**Decisión:** Scanner Python con lógica de exclusión: tags en `PARAM_TAGS = {'color', 'alpha', 'size', 'font', 'outlinecolor', 'lore', 'image', 'a'}` no se cuentan en opens (solo aparecen con parámetro). Tags en `SELFCLOSE = {'nw', 'p', 'fast', 'w', 'vbar', 'clear', 'space', 'done', 'cps'}` se excluyen de ambos stacks. Cada fix comparado con el `# original` comment del bloque para determinar placement correcto.
+**Razón:** 30 tags rotos en 14 archivos → crashes o texto corrupto ingame. Ninguno era intencional: todos vinieron del MT.
+**Archivos corregidos:** new_intro.rpy, mansion_heist.rpy, megumin_frog_ambush.rpy, blacksmith.rpy, bonus.rpy, chris.rpy, gabriel.rpy, lolisa.rpy, megumin.rpy, momo.rpy, guild/triggers.rpy, main_events.rpy, succubi_cafe.rpy, rescue_steph_quest.rpy.
+**Trampas de false positives del scanner:** `{color=#xx}...{/color}` siempre aparece como "0 opens, 1 close" si se excluye `color` de opens pero no de closes — excluir ambos. `{done}`, `{cps}` son self-closing en Ren'Py, no paired.
+
 ### 2026-04-30 — ナースコール警備員: pipeline completado — XLSX + binary patch level files
 
 **Estado final:** traducción ES funcional. Selector muestra "Español". Contenido del juego en español al seleccionar ese idioma.
