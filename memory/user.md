@@ -72,6 +72,7 @@ Cali · 2016 – 2021
 | Altergeist | danielos8900.itch.io/altergeist | — | Codesarrollador (Platzi Game Jam 2020) |
 | Voice Assistant | /home/kelsie/voice-assistant/ | Python, Claude API, faster-whisper, gTTS, Google Calendar | Arquitectura y desarrollo con IA |
 | Compañero | Pre-producción (sin URL) | Flutter, Supabase, Firebase, Rive | Implementador + sugeridor técnico (NO product owner); arte 3D clay render: Mar |
+| TL Games | /home/kelsie/projects/tlgames (github.com/KoichiFumikatsu/tlgames) | Python + herramientas GUI (UABEA, BepInEx, Ren'Py SDK) | Proyecto personal: traducción EN→ES de videojuegos (Ren'Py, Unity, RPG Maker, GameMaker, Electron) |
 
 **Pendiente:** Localfy no está en GitHub (código en local). Repos de GitHub desactualizados.
 
