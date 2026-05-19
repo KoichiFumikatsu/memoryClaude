@@ -55,6 +55,13 @@ Cali · 2016 – 2021
 **Email:** MX, DMARC, SPF, gestión de dominios
 **Videovigilancia:** DVR, instalación y configuración de cámaras
 **Herramientas:** GitHub, GitHub Actions, VS Code + Claude Code, Omada REST API
+**Automatización local (desde 2026-05-19):** Ollama, n8n, Docker
+
+## Stack de automatización local (Fumilinux)
+
+- **Ollama** — `systemctl start/stop ollama` · endpoint `http://localhost:11434` · modelo `llama3.2:3b` (2.0 GB, CPU only — sin GPU)
+- **n8n 2.20.11** — Docker (`sudo docker start/stop n8n`) · UI `http://localhost:5678` · accede a Ollama vía red host directamente
+- **MCP `ollama-mcp`** — registrado a scope usuario en Claude Code (`~/.claude.json`) · disponible en **todas** las sesiones sin configuración adicional · herramientas: `ollama_generate`, `ollama_chat`, `ollama_list`, etc.
 
 ## Gaming Setup (Linux)
 - **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`

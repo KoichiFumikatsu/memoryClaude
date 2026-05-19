@@ -63,3 +63,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-16] KelsieApp — aria-label en icon-only buttons (no title)** — El atributo `title` no es leído consistentemente por screen readers en mobile. Todos los botones con solo un ícono deben usar `aria-label` descriptivo en español.
 *Why: `title` fue encontrado en todos los módulos; reemplazado sistemáticamente.*
+
+**[2026-05-19] n8n — Docker, no npm** — n8n se instala vía Docker (`docker.n8n.io/n8nio/n8n`, `--network=host`). Nunca intentar `npm install -g n8n` en esta máquina.
+*Why: `isolated-vm` (dependencia nativa de n8n) no compila contra Node 18.19.1 por incompatibilidad de API V8. Falla con make exit code 2.*
+
+**[2026-05-19] Ollama MCP — scope usuario** — El MCP `ollama-mcp` está registrado a nivel usuario (`claude mcp add --scope user`), no a nivel proyecto. Queda disponible en todas las sesiones de Claude Code sin configuración adicional.
+*Why: la automatización con LLMs locales aplica a todos los proyectos (TL Games, AZCKeeper, Compañero, etc.), no solo a uno.*
