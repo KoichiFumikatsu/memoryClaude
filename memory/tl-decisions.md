@@ -11,6 +11,14 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 ## Historial
 
+### 2026-05-20 — Adventurer Trainer: issues de traducción detectados — PENDIENTE, no parchear aún
+**Palabras problemáticas observadas ingame:**
+- `guild` — quedó sin traducir en varios contextos (debería ser "gremio").
+- `fiesta` — término conflictivo (puede ser correcto en algunos casos o un falso cognado/calco del inglés "party").
+- `Donno` — artefacto de postprocess: "Don't" se tokenizó como "Don" + contracción y postprocess no lo limpió correctamente. Aparece como "Donno" en diálogo (ej. `main_events.rpy:13555` ya parcheado, pero puede haber más instancias).
+**Decisión:** no parchear en esta sesión. Registrar para la próxima vez que se trabaje en Adventurer Trainer.
+**Acción cuando se retome:** buscar `Donno` con grep en `tl/spanish/`, revisar `guild` sin traducir con `find_untranslated.py`, y auditar usos de `fiesta` vs `party` en contexto.
+
 ### 2026-05-20 — Adventurer Trainer: QA ingame superado — intro sin crashes
 **Estado:** traducción ES validada ingame. El juego cargó tl/spanish/ sin errores de compilación, ejecutó el intro completo (diálogo + combate contra Toad con Kazuma/Megumin/Darkness) sin crashes ni traceback nuevo.
 **Evidencia:** log.txt registra "Init translation" + combate completo. traceback.txt y errors.txt sin actualización nueva tras el run.
