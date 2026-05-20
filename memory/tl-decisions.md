@@ -11,6 +11,12 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 ## Historial
 
+### 2026-05-20 — Adventurer Trainer: QA ingame superado — intro sin crashes
+**Estado:** traducción ES validada ingame. El juego cargó tl/spanish/ sin errores de compilación, ejecutó el intro completo (diálogo + combate contra Toad con Kazuma/Megumin/Darkness) sin crashes ni traceback nuevo.
+**Evidencia:** log.txt registra "Init translation" + combate completo. traceback.txt y errors.txt sin actualización nueva tras el run.
+**Commits:** `ee05523` en `git@github.com:KoichiFumikatsu/tlgames.git` — `tools/tl/_translate_lore_tags.py`, `tools/qa_renpy.py`, `tools/qa_server.py`.
+**Pendiente:** jugar sesiones completas para detectar crashes en secuencias más avanzadas (darkness, megumin, guild events, etc.).
+
 ### 2026-05-19 — Adventurer Trainer: tooltips EN → ES (strings en dicts Python sin `_()`)
 **Contexto:** El juego (Ren'Py) tenía todos los tooltips de worldmap, buffs, guildwork y guild_upgrades en inglés aunque `tl/spanish/` estuviera completa. Los strings vivían en dicts Python (`{"name": "Guild Roster", ...}`) sin `_()`, por lo que el sistema tl de Ren'Py los ignoraba completamente.
 **Decisión:** Editar el source del juego (`game/scripts/`) para envolver esos strings con `_()`. Para el `_()` aplicado a strings con `.format()`, el orden correcto es `_("string {}").format(val)` — nunca `_("string {}".format(val))` (evalúa antes del wrap). Strings en `define` blocks con `_()` también funcionan (Ren'Py evalúa `define` después de cargar el idioma desde persistent).
