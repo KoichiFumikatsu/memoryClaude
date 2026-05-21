@@ -40,6 +40,21 @@
 - Al finalizar: dejar un resumen claro de qué se hizo, qué quedó pendiente y el estado final.
 - No pedir confirmación para pasos que son consecuencia directa del task acordado (ej. rebuild después de traducir, commit después de actualizar memoria).
 
+## Sincronización de memoria entre proyectos (regla crítica)
+
+Cuando se guarda información relevante en el `CLAUDE.md` de cualquier carpeta de proyecto (ej. `/home/kelsie/projects/tlgames/CLAUDE.md`), también guardar lo mismo en:
+- `/home/kelsie/memoryClaude-main/memory/` — memoria global con git
+- `/home/kelsie/.claude/projects/-home-kelsie/memory/` — auto-memoria local
+
+Lo que va en cada sistema:
+- `CLAUDE.md` del proyecto → instrucciones de sesión, comandos, rutas locales al proyecto
+- `memoryClaude-main/memory/` → contexto reutilizable entre proyectos, sin detalles operativos locales
+- auto-memory → misma información que memoryClaude-main, formato de memoria con frontmatter
+
+**Why:** Koichi tiene múltiples proyectos con CLAUDE.md propios. Si la info solo vive en uno, las sesiones en otros contextos no la ven. La memoria global es la fuente de verdad entre sesiones.
+
+**How to apply:** Al final de cualquier cambio a un CLAUDE.md externo, revisar qué es relevante fuera de ese proyecto y propagar a los dos sistemas de memoria. Siempre hacer commit+push de memoryClaude-main después.
+
 ## Lo que Claude NO debe hacer
 - Rellenar respuestas con contexto que el usuario ya sabe
 - Anunciar cambios de rol ("Como experto en redes...")
