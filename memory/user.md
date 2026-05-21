@@ -55,14 +55,17 @@ Cali · 2016 – 2021
 **Email:** MX, DMARC, SPF, gestión de dominios
 **Videovigilancia:** DVR, instalación y configuración de cámaras
 **Herramientas:** GitHub, GitHub Actions, VS Code + Claude Code, Omada REST API
-**Automatización local (desde 2026-05-19):** Ollama, n8n, Docker, tlgames-qa
+**Automatización local (desde 2026-05-19):** Ollama, n8n, Docker, tlgames-qa, tlgames-pipeline, tlgames-versions
 
 ## Stack de automatización local (Fumilinux)
 
 - **Ollama** — `systemctl start/stop ollama` · endpoint `http://localhost:11434` · modelo `llama3.2:3b` (2.0 GB, CPU only — sin GPU)
 - **n8n 2.20.11** — Docker (`sudo docker start/stop n8n`) · UI `http://localhost:5678` · login `fumikatsu.koichi@gmail.com` / `TlGames2026!`
 - **MCP `ollama-mcp`** — scope usuario en `~/.claude.json` · activo en todas las sesiones Claude Code · herramientas: `ollama_generate`, `ollama_chat`, etc.
-- **tlgames-qa** — systemd service · `http://localhost:8765/qa` · QA semántico para archivos `.rpy` via Ollama · scripts en `/home/kelsie/projects/tlgames/tools/`
+- **tlgames-qa** — systemd · `http://localhost:8765/qa` · QA semántico Ren'Py via Ollama
+- **tlgames-pipeline** — systemd · `http://localhost:8766` · pipeline completo (detect engine → translate → lint → QA); Ren'Py automatizado, Unity/RPGMaker requieren manual
+- **tlgames-versions** — systemd · `http://localhost:8767` · monitor versiones itch.io/F95Zone; DB en `tools/.versions.json`
+- **Carpeta de juegos:** `/home/kelsie/Downloads/Games h/` (sistema en inglés — no "Descargas")
 
 ## Gaming Setup (Linux)
 - **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`
