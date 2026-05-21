@@ -69,3 +69,6 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-19] Ollama MCP — scope usuario** — El MCP `ollama-mcp` está registrado a nivel usuario (`claude mcp add --scope user`), no a nivel proyecto. Queda disponible en todas las sesiones de Claude Code sin configuración adicional.
 *Why: la automatización con LLMs locales aplica a todos los proyectos (TL Games, AZCKeeper, Compañero, etc.), no solo a uno.*
+
+**[2026-05-21] TL Games — sistema de versionamiento por juego** — Cada juego traducido tiene `versions/vX.X.XX/` con snapshot del ZIP + NOTAS.txt automáticas, `05_snapshot.py`, `06_delta.py` y `GAME_INFO.txt`. Patrón implementado primero en TheDemonLordsLover.
+*Why: facilita actualizar traducciones al recibir nuevas versiones del juego, empaquetar por versión, y tener referencia de saves/binarios sin reconstruir el contexto desde cero.*
