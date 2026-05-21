@@ -57,6 +57,20 @@ Cali · 2016 – 2021
 **Herramientas:** GitHub, GitHub Actions, VS Code + Claude Code, Omada REST API
 **Automatización local (desde 2026-05-19):** Ollama, n8n, Docker, tlgames-qa, tlgames-pipeline, tlgames-versions
 
+## Hardware — Fumilinux (laptop personal)
+
+- **Modelo:** ASUS Vivobook X1404VA
+- **CPU:** Intel Core i7-1355U (13th Gen, 10 núcleos / 12 hilos, hasta 5.0 GHz)
+- **RAM:** 24 GB DDR4 3200 MHz — 8 GB soldados + 16 GB SO-DIMM · **no ampliable** (un slot libre ya ocupado)
+- **SSD:** SK Hynix PC711 NVMe 512 GB
+- **GPU:** Intel Iris Xe Graphics (96 EU, 1300 MHz) — comparable a RX 560 · sin soporte CUDA/HIP útil
+- **OS:** Ubuntu 24.04.4 LTS · Kernel 6.17 · GNOME en Xorg
+
+**Optimizaciones aplicadas (2026-05-21):**
+- TLP instalado → governor auto: `balance_performance` en AC, `balance_power` en batería
+- Swappiness: 60 → 10 (persistente en `/etc/sysctl.d/99-performance.conf`)
+- SSD: scheduler `none` + TRIM activo (ya estaba correcto)
+
 ## Stack de automatización local (Fumilinux)
 
 - **Ollama** — `systemctl start/stop ollama` · endpoint `http://localhost:11434` · modelo `llama3.2:3b` (2.0 GB, CPU only — sin GPU)
