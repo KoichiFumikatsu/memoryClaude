@@ -17,12 +17,20 @@ Si el contexto de la sesión involucra traducción de juegos, leer además:
 - [memory/tl-traduccion-juegos-brief.md](memory/tl-traduccion-juegos-brief.md) — brief general del workspace
 - [memory/tl-es-style.md](memory/tl-es-style.md) — guía de estilo español para traducciones
 - [memory/tl-decisions.md](memory/tl-decisions.md) — historial técnico de decisiones por juego
+- [memory/tl-refactor-5-stages.md](memory/tl-refactor-5-stages.md) — refactor pipeline_server a 5 etapas (estructura del flujo actual, archivos clave, settings, dashboard v2)
 
 Según el engine activo:
 - Ren'Py → [memory/tl-playbook-renpy.md](memory/tl-playbook-renpy.md)
 - Unity → [memory/tl-unity-brief.md](memory/tl-unity-brief.md) + [memory/tl-playbook-unity.md](memory/tl-playbook-unity.md)
 - RPG Maker → [memory/tl-rpgmaker-brief.md](memory/tl-rpgmaker-brief.md) + [memory/tl-playbook-rpgmaker.md](memory/tl-playbook-rpgmaker.md)
 - GameMaker → [memory/tl-gamemaker-brief.md](memory/tl-gamemaker-brief.md) + [memory/tl-playbook-gamemaker.md](memory/tl-playbook-gamemaker.md)
+
+## Memorias específicas por proyecto/refactor
+
+Cuando un proyecto tiene un refactor mayor, decisiones arquitectónicas extensas o documentación de un flujo completo que excede `decisions.md`, crear un archivo dedicado `<proyecto>-<tema>.md` en `memory/` y enlazarlo aquí. Reglas:
+- El archivo dedicado se carga solo cuando el contexto lo amerite (mencionado por el usuario, cwd dentro del proyecto, o trabajando sobre sus archivos).
+- Mantener `decisions.md` con resumen de una línea apuntando al archivo dedicado.
+- Replicar el archivo en `/home/kelsie/.claude/projects/-home-kelsie/memory/` con frontmatter + indexarlo en `MEMORY.md`.
 
 ---
 
