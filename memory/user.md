@@ -91,11 +91,16 @@ Cali · 2016 – 2021
 - Nota: ROCm no soporta GFX8 en versiones recientes; workaround `HSA_OVERRIDE_GFX_VERSION=9.0.0` funciona para SD
 
 **Torre 2:**
-- GPU: AMD RX 6500 XT 4GB (RDNA2, Navi 24)
+- GPU: AMD RX 6500 XT 4GB (RDNA2, Navi 24) — **candidata a venta/upgrade**
+- CPU: AMD Ryzen 5 5500
+- Board: Gigabyte B450M DS3H V2 (PCIe 3.0 x16)
 - OS: Windows
-- Limitación: PCIe x4 (no x16) → bottleneck para AI; peor opción de las dos para inferencia
+- Limitación: PCIe x4 GPU + bus 64-bit → stutter notable en gachas (Endfield, Honkai, ZZZ)
+- Upgrade objetivo: RX 6600 8GB (mínimo) o RX 6700 XT 12GB (ideal, también sirve para AI)
 
 **Interés pendiente (2026-05-22):** Instalar Linux en Torre 1 (RX 570) para AI generation local + gaming con Proton. Ya investigó compatibilidad Proton/Steam con juegos Windows en Linux — sin bloqueos conocidos.
+
+**Gaming Windows:** Juega gachas — Arknights Endfield, Honkai Star Rail, ZZZ y similares. Usa Torre 2 para gaming Windows.
 
 ## Gaming Setup (Linux)
 - **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`
