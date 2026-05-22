@@ -40,20 +40,29 @@
 - Al finalizar: dejar un resumen claro de qué se hizo, qué quedó pendiente y el estado final.
 - No pedir confirmación para pasos que son consecuencia directa del task acordado (ej. rebuild después de traducir, commit después de actualizar memoria).
 
-## Sincronización de memoria entre proyectos (regla crítica)
+## Persistencia dual de memoria — REGLA CRÍTICA REFORZADA (2026-05-22)
 
-Cuando se guarda información relevante en el `CLAUDE.md` de cualquier carpeta de proyecto (ej. `/home/kelsie/projects/tlgames/CLAUDE.md`), también guardar lo mismo en:
-- `/home/kelsie/memoryClaude-main/memory/` — memoria global con git
-- `/home/kelsie/.claude/projects/-home-kelsie/memory/` — auto-memoria local
+Toda información **no obvia** y **reutilizable** entre sesiones debe persistirse SIEMPRE en los DOS sistemas de memoria, sin importar en qué proyecto se esté trabajando:
 
-Lo que va en cada sistema:
-- `CLAUDE.md` del proyecto → instrucciones de sesión, comandos, rutas locales al proyecto
-- `memoryClaude-main/memory/` → contexto reutilizable entre proyectos, sin detalles operativos locales
-- auto-memory → misma información que memoryClaude-main, formato de memoria con frontmatter
+1. **Auto-memory (principal de Claude Code):** `/home/kelsie/.claude/projects/-home-kelsie/memory/`
+   - Una memoria = un archivo con frontmatter (`name`, `description`, `type`)
+   - Indexada en `MEMORY.md`
+   - Tipos: `user`, `feedback`, `project`, `reference`
 
-**Why:** Koichi tiene múltiples proyectos con CLAUDE.md propios. Si la info solo vive en uno, las sesiones en otros contextos no la ven. La memoria global es la fuente de verdad entre sesiones.
+2. **memoryClaude (backup git):** `/home/kelsie/memoryClaude-main/memory/`
+   - Archivos categoriales: `user.md`, `preferences.md`, `decisions.md`, `people.md`
+   - Memorias de proyecto específico: archivo dedicado (ej. `tl-refactor-5-stages.md`)
+   - Stop hook commit+push automático al cerrar sesión
 
-**How to apply:** Al final de cualquier cambio a un CLAUDE.md externo, revisar qué es relevante fuera de ese proyecto y propagar a los dos sistemas de memoria. Siempre hacer commit+push de memoryClaude-main después.
+3. **Si es proyecto nuevo:** además crear `CLAUDE.md` en la raíz del proyecto con instrucciones de sesión locales (paths, comandos, contexto que NO va en las memorias globales).
+
+**Why:** Koichi exige resiliencia. Un sistema puede fallar/corromperse/no montarse. Tener ambos garantiza recuperación. memoryClaude está en GitHub (portable entre máquinas). La memoria global es la fuente de verdad entre sesiones de cualquier proyecto.
+
+**How to apply:**
+- Al guardar memoria nueva: escribir en AMBOS sistemas + actualizar MEMORY.md de auto-memory.
+- Al actualizar memoria existente: buscar en ambos sistemas, editar AMBOS. Si solo existe en uno, propagar al otro.
+- Al cerrar sesión: el stop hook commitea memoryClaude-main. Verificar consistencia, no depender solo del hook.
+- Lo que NO va en memoria: estado efímero de tareas (usar TaskCreate), info derivable de código/git, detalles operativos locales (van en CLAUDE.md del proyecto).
 
 ## Lo que Claude NO debe hacer
 - Rellenar respuestas con contexto que el usuario ya sabe
