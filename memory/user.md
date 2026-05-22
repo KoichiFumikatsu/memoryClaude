@@ -87,6 +87,10 @@ Cali · 2016 – 2021
 - **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`
 - Requiere flag `--no-sandbox` (Electron sandbox issue en Linux)
 - .desktop en `~/.local/share/applications/dofus.desktop` y `~/Desktop/dofus.desktop`
+- **Steam + Proton:** instalado, Proton activo
+- **GE-Proton10-34:** instalado en `~/.steam/root/compatibilitytools.d/GE-Proton10-34` (2026-05-21)
+- **Lutris 0.5.22:** instalado vía PPA lutris-team (2026-05-21) — para juegos itch.io y no-Steam
+- **Interés en Hoyoverse (Linux):** Genshin/HSR/ZZZ requieren launchers especiales (`an-anime-team` en GitHub) — anti-cheat HoYo-PROTECT no compatible con Proton/Lutris estándar
 
 ## Projects in Production
 
