@@ -11,6 +11,32 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 ## Historial
 
+### 2026-05-22 — RPGMaker MV/MZ: pipeline autónomo + bugs críticos resueltos
+
+**Contexto:** Primer juego RPGMaker procesado con pipeline autónomo: "Life With a Flirty Step-Sister" (9 JSON files, 7272 strings — 7143 en CommonEvents.json solo, el 98% del contenido). Se detectaron y corrigieron 4 bugs en serie durante la misma sesión.
+
+**Bug 1 — ntfy spam (20 notificaciones/minuto):**
+El `for txt in texts` seguía ejecutando `deepl_translate()` después del primer `DeepLQuotaExhausted`, disparando ntfy en cada iteración. Fix: `if not deepl_active: batch_results.append(None); continue` al inicio del loop.
+
+**Bug 2 — DeepL se reintenta en cada run del día:**
+Al reiniciar el pipeline, volvía a intentar DeepL aunque estuviera agotado. Fix: persistencia en `tools/tl/.cache/deepl_quota_state.json` con `{"exhausted_date": "YYYY-MM-DD"}`. Al inicio del run, `_deepl_exhausted_today()` → si es hoy, `deepl_available = False` directamente. Se resetea automáticamente al día siguiente.
+
+**Bug 3 — OpenAI timeout (crash a los 8 minutos):**
+`openai_translate_batch()` está diseñado para recibir chunks de 25 strings (`OPENAI_BATCH_SIZE`). RPGMaker lo llamaba con todos los 7143 strings de CommonEvents.json de golpe → timeout de 120s inevitable → `raise last_err` → crash sin guardar nada. Fix: `_openai_chunked()` helper que divide en chunks de `OPENAI_BATCH_SIZE`, guarda cache tras cada chunk, captura errores de red por chunk sin abortar todo.
+
+**Bug 4 — Cache key mismatch (215 traducciones invisibles):**
+`openai_translate_batch()` guarda con clave `openai|model|texto`. `translate_rpgmaker.py` busca por clave `texto`. Las 215 traducciones del run anterior eran invisibles en el siguiente run. Fix: `_load_cache()` normaliza al cargar — strip del prefijo `openai|model|` → todas las claves pasan a texto plano.
+
+**Bug 5 — Dashboard sin output en tiempo real:**
+`subprocess.run(capture_output=False)` mandaba stdout al journal de systemd, no al progress log del job. Dashboard mostraba solo 4 líneas estáticas. Fix: `subprocess.Popen(stdout=PIPE)` + `for line in proc.stdout: log(line)`.
+
+**Trampa — proceso zombie sobrevive al reinicio del server:**
+Al hacer `systemctl restart` o `fuser -k 8766/tcp`, el server muere pero el subprocess `translate_rpgmaker.py` (hijo vía Popen o subprocess.run anterior) sobrevive. Dos procesos sobre los mismos archivos = corrupción. Verificar siempre con `ps aux | grep translate_` antes de relanzar, y matar el proceso viejo manualmente.
+
+**Estructura de CommonEvents.json:** concentra el 98% de los strings en un solo archivo. Los otros 8 archivos (Actors, Classes, Items, Map033, Map036, MapInfos, System, Tilesets) tienen entre 1 y 76 strings cada uno.
+
+**Estado actual (2026-05-22):** job `4d07093e` corriendo. DeepL agotado (fecha 2026-05-22). OpenAI activo, $0.21 gastados de $1.50 presupuesto. ~2% completado al momento de guardar memoria.
+
 ### 2026-05-22 — ShoSakyu: pipeline autónomo Unity JSON nativo + ntfy
 
 **Contexto:** ShoSakyu (`/home/kelsie/Downloads/Games h/ShoSakyuLinux0.27`) es Unity IL2CPP con sistema nativo de traducción JSON en `StreamingAssets/Translations/English/` (117 archivos, 9358 strings, ~354K chars). DeepL cuota exhausta (499,995/500,000). OpenAI presupuesto $1.50, gasto acumulado previo $0.1264, estimado para ShoSakyu ~$0.17 adicional. El workflow n8n anterior tenía un nodo `Wait` + polling que nunca terminaba y pedía input.
