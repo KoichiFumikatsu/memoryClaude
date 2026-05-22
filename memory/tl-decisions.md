@@ -28,6 +28,25 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 **Alternativas descartadas:** Ollama para traducción (calidad insuficiente para VN); n8n Execute Command (menos observable que pipeline_server); workflow con polling en n8n (requiere Loop node y mayor complejidad).
 
+### 2026-05-22 — Pipeline server: mejoras mayores (dashboard, game_info, copia automática)
+
+**Contexto:** sesión enfocada en hacer el pipeline completamente autónomo y observable para cualquier juego.
+
+**Decisiones:**
+1. **Dashboard en `localhost:8766`** — HTML embebido en pipeline_server.py. Panel de lanzamiento (ruta + idioma + botón), autocompletado desde historial. Badges por job: versión, OS con emoji (🐧🪟🍎), runtime. Banner "Listo para jugar" con instrucción por engine. Historial persistido en `logs/pipeline_jobs_history.jsonl` — sobrevive reinicios del server.
+2. **detect_game_info()** — corre tras detect_engine() en cada job. Detecta: versión (`.itch.toml` > `version.txt` > `app.info` línea 3 > nombre exe > nombre carpeta; regex con y sin separador para cubrir casos como `Linux0.27`), OS (`.x86_64`=linux, `.exe`=windows, `lib/py3-*/` para Ren'Py), runtime Unity (IL2CPP si `il2cpp_data/`, Mono si `Managed/`), company/product de `app.info`.
+3. **Copia automática** a `~/Documents/games tl/<name>/` con `rsync -a --update --delete` al terminar. Fallback `shutil.copytree`. Solo en traducción exitosa (rc 0 o 2).
+4. **Ren'Py auto-SDK**: si `tl/spanish/` no existe, busca `renpy.sh` via `RENPY_SDK` env var o ubicaciones comunes y lo corre automáticamente antes del MT.
+5. **Guardia anti-duplicado**: POST /pipeline devuelve 409 si hay job `running` para el mismo path.
+6. **n8n workflow renombrado** a "TL Games — Pipeline Universal" (ID `CAak4TD2OzhhsXBA`) via edición directa de SQLite en `/var/lib/docker/volumes/n8n_data/_data/database.sqlite`. PUT via REST API retorna 404 en n8n 2.20.11 — siempre editar BD o usar CLI `publish:workflow` + `docker restart n8n`.
+7. **Iconos Desktop**: `~/Desktop/TL Dashboard.desktop` y `~/Desktop/n8n Workflows.desktop`.
+
+**Biblioteca `~/Documents/games tl/`** (estado 2026-05-22): ShoSakyuLinux0.27 (1.3G, IL2CPP, Linux, v0.27), Adventurer Trainer (2.2G, Ren'Py, Linux+Win, v0.2.2b), The Demon Lords Lover v0.16.97 (1.4G, Mono, Linux).
+
+**Version tracker** (estado 2026-05-22): Adventurer Trainer + The Demon Lords Lover. ShoSakyu pendiente — URL itch.io desconocida.
+
+**Trampa versión**: regex `[._-](\d+\.\d+...)` falla en `ShoSakyuLinux0.27` porque no hay separador antes del `0`. Usar fallback `_VER_BARE` sin separador requerido.
+
 ### 2026-05-20 — Adventurer Trainer: issues de traducción detectados — PENDIENTE, no parchear aún
 **Palabras problemáticas observadas ingame:**
 - `guild` — quedó sin traducir en varios contextos (debería ser "gremio").
