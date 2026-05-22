@@ -11,6 +11,23 @@ Decisiones técnicas y de producto tomadas durante el proyecto, con su razonamie
 
 ## Historial
 
+### 2026-05-22 — ShoSakyu: pipeline autónomo Unity JSON nativo + ntfy
+
+**Contexto:** ShoSakyu (`/home/kelsie/Downloads/Games h/ShoSakyuLinux0.27`) es Unity IL2CPP con sistema nativo de traducción JSON en `StreamingAssets/Translations/English/` (117 archivos, 9358 strings, ~354K chars). DeepL cuota exhausta (499,995/500,000). OpenAI presupuesto $1.50, gasto acumulado previo $0.1264, estimado para ShoSakyu ~$0.17 adicional. El workflow n8n anterior tenía un nodo `Wait` + polling que nunca terminaba y pedía input.
+
+**Decisión:**
+1. `tools/tl/translate_unity_json.py` — script autónomo: DeepL → OpenAI fallback sin interacción. Protege tags TMP (`<tag>`, `::Name::`, `{placeholder}`). Sends ntfy.sh progress (start con cuotas, 25%/50%/75%, switch de provider con costos, final con resumen completo de gasto). Sin Wait, sin preguntas.
+2. `pipeline_server.py` — añadido `detect_unity_json_tl()` + `run_unity_json_pipeline()`. Ya no retorna `unsupported` para juegos Unity con Translations/English/. Acepta `lang` y `ntfy_topic` en POST /pipeline.
+3. n8n workflow "TL Games — ShoSakyu Autónomo" (ID `CAak4TD2OzhhsXBA`) — webhook fire-and-forget: Webhook → HTTP Request (POST /pipeline) → Respond. Sin polling. Las notificaciones ntfy vienen del script.
+
+**Regla de Wait en n8n:** los nodos Wait solo se usan para decisiones importantes (ej. confirmar si se supera un presupuesto inesperado). Para el flujo normal de traducción, siempre es fire-and-forget + ntfy.
+
+**Razón:** el pipeline anterior (`jatC506GNXB51H9u`) tenía `n8n-nodes-base.wait` + `n8n-nodes-base.if` sin loop real, y estaba `active: false`. En n8n, Wait solo funciona con workflows activos y no crea loops sin nodo Loop dedicado.
+
+**Trampa Unity JSON:** el juego tiene tags TextMeshPro (`<shake a=0.2>`, `<sprite name=X>`, `<waitfor=N>`, `::Player::`) que deben tokenizarse como `ZU###Z` antes del MT. No usar los sentinels ZT (Ren'Py) ni ZG (glosario).
+
+**Alternativas descartadas:** Ollama para traducción (calidad insuficiente para VN); n8n Execute Command (menos observable que pipeline_server); workflow con polling en n8n (requiere Loop node y mayor complejidad).
+
 ### 2026-05-20 — Adventurer Trainer: issues de traducción detectados — PENDIENTE, no parchear aún
 **Palabras problemáticas observadas ingame:**
 - `guild` — quedó sin traducir en varios contextos (debería ser "gremio").
