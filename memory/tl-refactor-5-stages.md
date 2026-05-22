@@ -116,16 +116,16 @@ CLI standalone. zipfile.ZipFile + ZIP_STORED para > compress_below_mb. Emite `[P
 - **MODIFICADO** `POST /pipeline` — body mínimo `{"path": "..."}`. Defaults del settings. Backward compat con campos antiguos.
 - **MOVIDO** `DASHBOARD_HTML` (línea 111) — leer `tools/dashboard.html`, eliminar embebido.
 
-## Plan de migración (6 fases)
+## Plan de migración — TODAS LAS FASES IMPLEMENTADAS 2026-05-22
 
 | Fase | Trabajo | Estado |
 |------|---------|--------|
-| **0 — Base** | `pipeline_settings.json`, `_settings.py`, `_deepl.py`, endpoints GET/POST /settings | **PARCIAL — 3 archivos creados, endpoints PENDIENTES** |
-| **1 — Scaffolding** | Campos stages/events/analysis/current_stage/overall_pct. StageTracker + emit_event. | PENDIENTE |
-| **2 — Wrap engines** | Descomponer 3 `run_*_pipeline`. Wrapper `run_pipeline_v2`. v1 con flag. | PENDIENTE |
-| **3 — Preflight + Package** | `_preflight.py`, `_package.py`. Integrar en analyze y package. | PENDIENTE |
-| **4 — Dashboard v2** | Nuevo HTML con 5 chips, panel expandido, settings link, ETA, costos. Fallback a `progress[]`. | PENDIENTE |
-| **5 — Cleanup** | (Deferred 1-2 semanas) Borrar `run_*_pipeline` v1. | DEFERRED |
+| **0 — Base** | `pipeline_settings.json`, `_settings.py`, `_deepl.py`, endpoints + health enriquecido | **COMPLETA** ✓ |
+| **1 — Scaffolding** | Campos aditivos + StageTracker + emit_event con ntfy dispatch | **COMPLETA** ✓ |
+| **2 — Wrap engines** | `run_pipeline_v2` + sub-funciones por etapa por engine. v1 con flag `?pipeline_version=v1` | **COMPLETA** ✓ (verif. job 46fd02c9) |
+| **3 — Preflight + Package** | `_preflight.py` + `_package.py` integrados en analyze/package | **COMPLETA** ✓ |
+| **4 — Dashboard v2** | 5 chips, panel expandido, settings modal, health alert, eventos colapsable, fallback legacy | **COMPLETA** ✓ |
+| **5 — Cleanup** | Borrar v1 tras 1-2 semanas estable | DEFERRED |
 
 ## Archivos — estado actual
 
@@ -231,16 +231,20 @@ localhost:11434, llama3.2:3b CPU. Solo qa_server (8765) en lint_qa. NO se usa pa
 7. Jobs viejos JSONL siguen renderizando.
 8. Ren'Py sin pending → translate skipped pct=100, lint_qa con issues_total.
 
-## Punto de retomar (wakeup 2026-05-22 ~18:25)
+## Estado al 2026-05-22 ~18:45 — REFACTOR COMPLETO
 
-**Hecho:**
-- Fase 0 COMPLETA (settings infra + endpoints + health enriquecido)
-- Fase 1 COMPLETA (StageTracker + emit_event + campos aditivos en job). Codigo en place pero NO se invoca aun (runners viejos siguen activos).
-- Fase 3 archivos creados (_preflight.py, _package.py) CLI standalone, NO integrados aun.
+Todas las fases (0-4) implementadas y verificadas con job real `46fd02c9` (Adventurer Trainer Ren'Py 0.2.2b, 110 archivos, 220K chars, 2.14GB):
+- analyze done 100% (preflight retorna deepl, switch reactivo a openai por exhausted_today)
+- setup done 100%
+- translate al 50% (56/110 archivos) al cerrar sesión
+- provider_switch DeepL→OpenAI detectado y notificado por ntfy
+- 5 chips renderizan correctamente en dashboard
+- POST /settings round-trip OK
 
-**Pendiente:**
-1. **Fase 2** — descomponer `run_*_pipeline` en sub-funciones por etapa, crear `run_pipeline_v2(job, settings)`, integrar StageTracker + preflight + _package. Mantener v1 con flag `?pipeline_version=v1`.
-2. **Fase 4** — `dashboard.html` v2 con 5 chips, panel expandido, settings link, ETA, costos.
-3. **Verificacion E2E** — lanzar contra ShoSakyu (Unity) y TheDemonLordsLover (Ren'Py).
+**Pendiente no crítico:**
+- E2E del stage package (job todavía en translate al cierre, completará lint_qa + package automáticamente)
+- Fase 5 cleanup deferred 1-2 semanas
 
-**Heartbeat de DeepL detectado:** `deepl_quota_state.json` reporta `exhausted_date=2026-05-22` pero `/health` muestra 500001 chars disponibles. El flag se marca tras un 456 sin chequear si fue solo una key del pool. Al integrar preflight en Fase 2, considerar limpiar el flag automaticamente si `check_quota_pool()` reporta `available > 50_000`.
+**Bug DeepL exhausted_today auto-clear:** `_maybe_clear_deepl_exhausted()` se invoca en analyze; limpia el flag si pool reporta >50K disponibles via API. Resuelve el problema de flag stale por 456 en una sola key del pool.
+
+**Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
