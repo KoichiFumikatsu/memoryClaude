@@ -70,6 +70,8 @@ Cali · 2016 – 2021
 - TLP instalado → governor auto: `balance_performance` en AC, `balance_power` en batería
 - Swappiness: 60 → 10 (persistente en `/etc/sysctl.d/99-performance.conf`)
 - SSD: scheduler `none` + TRIM activo (ya estaba correcto)
+- EasyEffects **Flatpak** (Flathub) instalado con RNNoise para cancelación de ruido en mic — preset `microfono-limpio` en `~/.var/app/com.github.wwmm.easyeffects/data/easyeffects/input/` — autostart en `~/.config/autostart/easyeffects.desktop` — dispositivo virtual: `easyeffects_source` (seleccionar en Discord como entrada)
+  - **Nota:** el paquete `apt` de Ubuntu 24.04 viene compilado sin RNNoise. Siempre usar la versión Flatpak.
 
 ## Stack de automatización local (Fumilinux)
 
