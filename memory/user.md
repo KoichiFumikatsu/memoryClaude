@@ -83,6 +83,20 @@ Cali · 2016 – 2021
 - **tlgames-versions** — systemd · `http://localhost:8767` · monitor versiones itch.io/F95Zone; DB en `tools/.versions.json`
 - **Carpeta de juegos:** `/home/kelsie/Downloads/Games h/` (sistema en inglés — no "Descargas")
 
+## Hardware — Torres Windows
+
+**Torre 1 (principal para AI/GPU):**
+- GPU: AMD RX 570 8GB (Polaris, GFX8)
+- OS: Windows (actual) — candidata a Linux para AI generation
+- Nota: ROCm no soporta GFX8 en versiones recientes; workaround `HSA_OVERRIDE_GFX_VERSION=9.0.0` funciona para SD
+
+**Torre 2:**
+- GPU: AMD RX 6500 XT 4GB (RDNA2, Navi 24)
+- OS: Windows
+- Limitación: PCIe x4 (no x16) → bottleneck para AI; peor opción de las dos para inferencia
+
+**Interés pendiente (2026-05-22):** Instalar Linux en Torre 1 (RX 570) para AI generation local + gaming con Proton. Ya investigó compatibilidad Proton/Steam con juegos Windows en Linux — sin bloqueos conocidos.
+
 ## Gaming Setup (Linux)
 - **Ankama Launcher (Dofus 3):** AppImage en `/home/kelsie/Downloads/Dofus 3.0-Setup-x86_64.AppImage`
 - Requiere flag `--no-sandbox` (Electron sandbox issue en Linux)
