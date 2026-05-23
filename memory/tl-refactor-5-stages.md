@@ -247,4 +247,30 @@ Todas las fases (0-4) implementadas y verificadas con job real `46fd02c9` (Adven
 
 **Bug DeepL exhausted_today auto-clear:** `_maybe_clear_deepl_exhausted()` se invoca en analyze; limpia el flag si pool reporta >50K disponibles via API. Resuelve el problema de flag stale por 456 en una sola key del pool.
 
+## Migración QA a Groq (2026-05-22 ~22:00)
+
+**Problema:** Ollama `llama3.2:3b` en CPU se saturaba con cargas concurrentes. Medición real: `/health` tardó 4299s (71 min) cuando el pipeline corría lint_qa sobre 110 archivos. Job en producción siempre marcaba `lint_qa warn timeout` y continuaba sin QA semántico.
+
+**Solución:** `qa_renpy.py` ahora soporta dos backends via constante `BACKEND` ('auto' | 'groq' | 'ollama'):
+- **groq** (default si hay `GROQ_API_KEY` en .env): llama API REST OpenAI-compatible `https://api.groq.com/openai/v1/chat/completions` con `urllib.request` (cero deps nuevas). Modelo `llama-3.1-8b-instant`. Free tier 30 req/min, 14400 req/día. Rate limit interno 2s entre requests.
+- **ollama** (fallback si no hay key): comportamiento original.
+- **auto**: groq si hay key, sino ollama.
+
+**Trampa Cloudflare:** Groq está detrás de Cloudflare. `urllib.request` por default manda `User-Agent: Python-urllib/X.Y` y Cloudflare lo bloquea con HTTP 403 error code 1010. Workaround: header `User-Agent: tlgames-qa/1.0 (+...)` resuelve.
+
+**Performance comparado** (archivo `common.rpy` Adv_Trainer, 147 pares en 4 batches):
+- Ollama llama3.2:3b CPU: timeout (no responde a tiempo)
+- Groq llama-3.1-8b-instant: **16.5s total** (4s/batch + 2s rate limit), **~270x más rápido**
+
+**Configuración:**
+- `tools/pipeline_settings.json` → `qa.timeout_sec: 1800` (30 min, ample para juegos grandes), `qa.backend: groq`
+- `tools/tl/_settings.py` defaults equivalentes
+- `tools/qa_server.py` `/health` ahora reporta `{backend, model}` dinámicamente
+- `.env` añadido `GROQ_API_KEY=gsk_...`
+- `qa_renpy.py` CLI: `--backend auto|groq|ollama` `--groq-model X` `--ollama-model X`
+
+**Verificación:** `qa_server /health` reporta `{"backend":"groq","model":"llama-3.1-8b-instant"}` tras restart.
+
+**Costo:** $0 (free tier). Si excede 14400 req/día, downgrade automático a Ollama via setting o env vars.
+
 **Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
