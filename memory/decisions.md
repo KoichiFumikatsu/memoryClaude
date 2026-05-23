@@ -13,6 +13,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 **[2026-05-22] TL Games — auto-diagnose post-job** — `pipeline_server.py` invoca `tools/diagnose.sh <job_id> --no-color` al finalizar cada job (toggle `diagnose.run_after_job` en settings). El reporte se guarda en `job.diagnose_report` y se muestra en dashboard en sección colapsable.
 *Why: visibilidad inmediata del estado completo del sistema cuando algo termina mal, sin tener que ejecutar el comando manualmente. Best-effort: si falla, no rompe el pipeline.*
 
+**[2026-05-22] TL Games — chmod +x automatico en copy_to_games_tl** — `_fix_executable_perms()` aplica +x a binarios Ren'Py (.sh, lib/py3-linux-*/<nombre>) y Unity (.x86_64) en destino Y origen tras la copia. Bug detectado con girlfriends_in_outer_worlds v0.3 cuyo binario interno venia sin bits ejecutables del ZIP original.
+*Why: zips Linux mal empaquetados (descargados de itch.io/etc) suelen perder bits +x; rsync los preserva. Sin este fix el juego queda intraducible-pero-no-ejecutable tras el pipeline.*
+
 **[2026-05-07] Sistema de memoria** — sistema de archivos en `/memory/` dentro del repo `memoryClaude`, con commit/push automático al final de cada sesión vía stop hook.
 *Why: más fácil de diff y actualizar por archivo sin tocar la config principal. Portable entre máquinas vía GitHub.*
 

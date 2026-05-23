@@ -313,4 +313,18 @@ Todas las fases (0-4) implementadas y verificadas con job real `46fd02c9` (Adven
 
 **Verificado:** job `f4745015` (path inexistente, fallo en 8s) trae diagnose_report de 3003 chars con 7 secciones completas.
 
+## Fix permisos +x post-copia (2026-05-22)
+
+**Bug encontrado:** girlfriends_in_outer_worlds v0.3 quedo intraducible al lanzar — el `.sh` tenia +x pero el binario interno `lib/py3-linux-x86_64/<nombre>` no. Error: `cannot execute: Permission denied`. Causa: el ZIP original venia sin bits ejecutables (problema comun de zips Linux mal empaquetados); rsync preservaba el bug en el destino.
+
+**Solucion:** helper `_fix_executable_perms(path, job)` en `pipeline_server.py` busca y aplica +x a:
+- `<path>/*.sh` (launcher Ren'Py)
+- `<path>/lib/py3-linux-*/<nombre>` (binario Python Ren'Py)
+- `<path>/lib/linux-*/<nombre>` (binario Ren'Py viejo)
+- `<path>/*.x86_64`, `<path>/*.x86` (Unity Linux)
+
+Se invoca dentro de `copy_to_games_tl` tras `rsync` exitoso, sobre destino Y origen (asi el `.sh` del usuario en `Downloads/Games h/` tambien queda funcional). Reporta en progress[] los archivos modificados.
+
+**Trampa:** ZIP de `_package.py` preserva `external_attr` con los bits ejecutables del filesystem. Como el fix se aplica antes de que pueda re-zipear, el proximo ZIP queda OK. Para jobs ya hechos: re-lanzar el pipeline (rsync con `--update --delete` no rehace pero el chmod si).
+
 **Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
