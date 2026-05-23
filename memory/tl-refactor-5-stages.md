@@ -337,7 +337,24 @@ Se invoca dentro de `copy_to_games_tl` tras `rsync` exitoso, sobre destino Y ori
 
 Se invoca al final de `_v2_renpy_translate` cuando `renpy.force_language_if_no_selector=true` (default en settings). Si no hay selector y aun no existe el archivo, lo crea y emite `emit_event(translate, warn, ...)` notificando al usuario por ntfy.
 
-**Trampa persistent:** si el usuario ya abrio el juego antes (existe `~/.renpy/<game>_NN/persistent` con `_preferences.language=None`), el config.default_language NO toma efecto porque persistent gana. Workaround para jobs YA traducidos: borrar persistent (con backup) tras instalar el force.rpy. Para jobs NUEVOS: el force.rpy carga antes de que persistent guarde nada → arranca directo en español.
+**Trampa persistent (CRITICA — verificado 2026-05-22):** si el usuario ya abrio el juego antes (existe `~/.renpy/<game>_NN/persistent` con `_preferences.language=None`), `config.default_language="spanish"` NO toma efecto. El persistent gana sobre el default. Solucion: el `.rpy` final debe tener AMBOS bloques:
+
+```python
+init -100 python:
+    config.default_language = "spanish"  # solo aplica si NO hay persistent
+
+init 1500 python:
+    # Corre DESPUES de cargar persistent. Sobrescribe si language!=spanish.
+    try:
+        if _preferences.language != "spanish":
+            renpy.change_language("spanish")
+    except Exception:
+        pass
+```
+
+**NUNCA hacer `import renpy` dentro de `init python:`** — sombrea el namespace global del juego y rompe llamadas como `renpy.music.channel_defined(...)` en `00mixers.rpy`. Usar el `renpy` global directamente.
+
+**Helper `_renpy_backup_user_persistent(game_path)`:** busca `~/.renpy/<base>_NN/persistent`, lo mueve a `.bak.<ts>`. Se llama desde `_v2_renpy_translate` tras inyectar el force.rpy. Match por `basename` flexible (ignora `_`, `-`, mayúsculas). Sin esto, el primer arranque post-pipeline sigue en EN aunque el .rpy esté correcto.
 
 **Verificado:** game/_force_spanish.rpy creado para girlfriends_in_outer_worlds, persistent reseteado, juego arranca y log.txt confirma "Init translation" con tl/spanish/ cargado.
 
