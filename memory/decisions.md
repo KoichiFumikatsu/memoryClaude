@@ -16,6 +16,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 **[2026-05-22] TL Games — chmod +x automatico en copy_to_games_tl** — `_fix_executable_perms()` aplica +x a binarios Ren'Py (.sh, lib/py3-linux-*/<nombre>) y Unity (.x86_64) en destino Y origen tras la copia. Bug detectado con girlfriends_in_outer_worlds v0.3 cuyo binario interno venia sin bits ejecutables del ZIP original.
 *Why: zips Linux mal empaquetados (descargados de itch.io/etc) suelen perder bits +x; rsync los preserva. Sin este fix el juego queda intraducible-pero-no-ejecutable tras el pipeline.*
 
+**[2026-05-22] TL Games — auto-inyectar _force_<lang>.rpy si Ren'Py sin selector** — `_renpy_has_language_selector` detecta si el juego expone `change_language`/`_preferences.language` en su UI. Si no, `_renpy_inject_language_force` crea `game/_force_<lang>.rpy` con `config.default_language = "<lang>"`. Setting `renpy.force_language_if_no_selector: true`.
+*Why: muchos juegos VN Ren'Py son monoglotas EN sin selector en menu; la traduccion existe pero no hay forma de activarla. El force.rpy es no destructivo y reversible (borrar archivo + persistent). Trampa: persistent existente del usuario sobrescribe el default — debe borrarse manualmente la primera vez.*
+
 **[2026-05-07] Sistema de memoria** — sistema de archivos en `/memory/` dentro del repo `memoryClaude`, con commit/push automático al final de cada sesión vía stop hook.
 *Why: más fácil de diff y actualizar por archivo sin tocar la config principal. Portable entre máquinas vía GitHub.*
 

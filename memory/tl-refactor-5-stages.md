@@ -327,4 +327,20 @@ Se invoca dentro de `copy_to_games_tl` tras `rsync` exitoso, sobre destino Y ori
 
 **Trampa:** ZIP de `_package.py` preserva `external_attr` con los bits ejecutables del filesystem. Como el fix se aplica antes de que pueda re-zipear, el proximo ZIP queda OK. Para jobs ya hechos: re-lanzar el pipeline (rsync con `--update --delete` no rehace pero el chmod si).
 
+## Auto-inyectar _force_<lang>.rpy si juego sin selector (2026-05-22)
+
+**Bug:** girlfriends_in_outer_worlds v0.3 tras traducirse no muestra el idioma español. Causa: el juego NO tiene selector de idioma en su UI (no usa `change_language` ni `_preferences.language` en ningun `game/*.rpy` no-tl). Era monoglota EN por diseño. La traduccion existe en `tl/spanish/` pero no hay forma de activarla desde el menu.
+
+**Solucion:** `pipeline_server.py` añade dos helpers:
+- `_renpy_has_language_selector(game_path) -> bool` — grep recursivo de `change_language|_preferences.language` en `game/*.rpy` excluyendo `tl/`
+- `_renpy_inject_language_force(game_path, lang_code) -> Path|None` — crea `game/_force_<lang>.rpy` con `init -100 python: config.default_language = "<lang>"`. Idempotente: no sobrescribe si ya existe.
+
+Se invoca al final de `_v2_renpy_translate` cuando `renpy.force_language_if_no_selector=true` (default en settings). Si no hay selector y aun no existe el archivo, lo crea y emite `emit_event(translate, warn, ...)` notificando al usuario por ntfy.
+
+**Trampa persistent:** si el usuario ya abrio el juego antes (existe `~/.renpy/<game>_NN/persistent` con `_preferences.language=None`), el config.default_language NO toma efecto porque persistent gana. Workaround para jobs YA traducidos: borrar persistent (con backup) tras instalar el force.rpy. Para jobs NUEVOS: el force.rpy carga antes de que persistent guarde nada → arranca directo en español.
+
+**Verificado:** game/_force_spanish.rpy creado para girlfriends_in_outer_worlds, persistent reseteado, juego arranca y log.txt confirma "Init translation" con tl/spanish/ cargado.
+
+**Setting:** `renpy.force_language_if_no_selector: true` en pipeline_settings.json. Si el usuario quiere desactivar (juegos que SI tienen selector custom no detectado por el grep), set a false.
+
 **Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
