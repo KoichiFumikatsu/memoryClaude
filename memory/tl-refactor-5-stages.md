@@ -298,4 +298,19 @@ Todas las fases (0-4) implementadas y verificadas con job real `46fd02c9` (Adven
 
 **Workaround Python warning:** los logs tienen `\$X.XX` literales (dólares de gastos OpenAI). Python heredoc los lee como escape sequences inválidas. Solución: `python3 -W ignore` silencia el warning sin afectar funcionalidad.
 
+## Auto-diagnose post-job (2026-05-22)
+
+`pipeline_server.py` añade helper `_run_diagnose(job)` que se llama tras `run_pipeline_v2` y tras el path legacy v1 en `run_job`, justo antes de `_persist_job`. Ejecuta `tools/diagnose.sh <job_id> --no-color` y guarda el output en `job["diagnose_report"]` (string completo).
+
+**Settings:**
+- `diagnose.run_after_job: true` (default, configurable via /settings)
+- `diagnose.timeout_sec: 60` (max espera, best-effort)
+
+**Garantías:**
+- No bloquea ni rompe el pipeline si diagnose.sh falla (timeout/permisos/error).
+- El reporte se persiste en `logs/pipeline_jobs_history.jsonl` con el resto del job.
+- Dashboard v2 renderiza `job.diagnose_report` en sección colapsable "Diagnose report (post-job)".
+
+**Verificado:** job `f4745015` (path inexistente, fallo en 8s) trae diagnose_report de 3003 chars con 7 secciones completas.
+
 **Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
