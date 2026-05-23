@@ -273,4 +273,29 @@ Todas las fases (0-4) implementadas y verificadas con job real `46fd02c9` (Adven
 
 **Costo:** $0 (free tier). Si excede 14400 req/día, downgrade automático a Ollama via setting o env vars.
 
+## Script de diagnóstico (2026-05-22)
+
+`tools/diagnose.sh` — reporte completo de salud del pipeline para copy-paste a Claude cuando algo falle.
+
+**Uso:**
+```bash
+./tools/diagnose.sh                       # reporte general
+./tools/diagnose.sh <job_id>              # general + detalle del job
+./tools/diagnose.sh <job_id> --log-lines 100  # mas lineas del log
+./tools/diagnose.sh --no-color            # ANSI off para archivos
+```
+
+**Secciones del reporte:**
+1. Servicios systemd (tlgames-pipeline, tlgames-qa, tlgames-versions)
+2. Health endpoints — pipeline_server + qa_server con backend/model dinámico
+3. Últimos 5 jobs con status colorizado (OK/ERR/RUN)
+4. Detalle del job (si se pasa job_id): analysis, stages con details, stats, eventos críticos (errors/warns/provider_switch), últimas N lineas del progress log
+5. Disco — espacio en games tl/
+6. Errores systemd últimas 2h en pipeline/qa
+7. Variables .env relevantes (keys ocultas, solo prefix+suffix)
+
+**Trampa:** /pipeline/<id> solo busca en _jobs in-memory (max 50). El script hace fallback automático a `logs/pipeline_jobs_history.jsonl` si el job no existe en memoria. Sin esto, jobs viejos eran invisibles.
+
+**Workaround Python warning:** los logs tienen `\$X.XX` literales (dólares de gastos OpenAI). Python heredoc los lee como escape sequences inválidas. Solución: `python3 -W ignore` silencia el warning sin afectar funcionalidad.
+
 **Modificaciones al pipeline_server.py:** de 1000 a 1859 líneas, ver detalle en versión local en `/home/kelsie/.claude/projects/-home-kelsie/memory/project_tlgames_refactor_5_stages.md`.
