@@ -451,3 +451,32 @@ esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings
 **Limitaciones aceptadas:** strings dentro de bloques `code: '''...'''` no se traducen (raros, suelen ser tutoriales del autor). F-strings tampoco (no usados en este juego).
 
 **Detección de futuros juegos KPS:** buscar `kps_build_conversation_list` o cabecera `© Kesash` en `phone.rpy`. Autor itch.io: `kesash`, Discord: `randomfox_`.
+
+### 2026-05-24 — Detector engine: soporte juegos Ren'Py con script empaquetado
+
+**Contexto:** Stuck with my Ex's Family and Zombies fue reportado como "no soportado" por el pipeline. Causa: `detect_engine` busca `rglob("*.rpy")` en `game/`, pero el juego tiene 0 .rpy y 0 .rpyc sueltos — todo está dentro de `scripts.rpa`. Patrón cada vez más común en juegos Ren'Py modernos.
+
+**Decisión:**
+
+1. **detect_engine extendido:** si `game/` tiene `scripts.rpa`, `.rpyc` o `script_version.txt` aunque no haya `.rpy`, reportar `engine="renpy", state="packed", needs_unpack/needs_decompile`. Antes retornaba `unknown`.
+
+2. **Auto-unpack en stage analyze:** nueva función `_renpy_unpack_and_decompile(game_path, job, settings)` que:
+   - Ejecuta `unrpa` sobre cada `.rpa` (excepto audio/images/movie/video por tamaño)
+   - Ejecuta `unrpyc -c game/` sobre todos los `.rpyc` resultantes
+   - Renombra `.rpa` procesado a `.unpacked_bak`
+   - Es idempotente: si ya hay `.rpy`, no hace nada
+
+3. **Settings nuevos en pipeline_settings.json:**
+   ```json
+   "renpy": {
+     "unrpa_bin": "/home/kelsie/.local/bin/unrpa",
+     "unrpyc_script": "/home/kelsie/.local/share/unrpyc/unrpyc-master/unrpyc.py",
+     "auto_unpack": true
+   }
+   ```
+
+4. **unrpyc instalado:** descargado master branch desde GitHub (CensoredUsername/unrpyc) a `~/.local/share/unrpyc/unrpyc-master/`. Versión release v2.0.4 solo trae `un.rpy` (script Ren'Py), no script standalone — por eso master.
+
+**Verificación:** detector retorna correctamente `{engine: "renpy", state: "packed", needs_unpack: true, needs_decompile: true}` para el juego problemático. Servicio `tlgames-pipeline` reiniciado.
+
+**Trampa documentada:** si tras decompile el juego trae traducción oficial del autor en `tl/<lang>/`, NO traducir — verificar pending con grep `'old "'` vs `'new ""'`. Caso Stuck Family Zombies: 1473 bloques translate, 474 strings, 0 pending → solo `_force_spanish.rpy` para auto-arranque.

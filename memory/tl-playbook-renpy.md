@@ -78,6 +78,36 @@ cd "proyects Game TL/<NombreJuego>/game"
 python -m unrpa -mp . content.rpa  # repetir para cada .rpa
 ```
 
+**0.2.bis CASO CRÍTICO: juego SIN ningún `.rpy` ni `.rpyc` suelto (todo en scripts.rpa).**
+
+Algunos juegos modernos distribuyen el script entero empaquetado en `scripts.rpa` y no dejan absolutamente nada suelto. `detect_engine` antes retornaba "unknown" → unsupported. Síntomas:
+
+```bash
+ls game/   # solo .rpa, cache, fonts, gui, images, presplash, script_version.txt
+find game -name '*.rpy' -o -name '*.rpyc' | wc -l   # 0
+```
+
+Pasos:
+```bash
+# Linux: unrpa standalone
+~/.local/bin/unrpa game/scripts.rpa     # genera .rpyc dentro de game/
+# Luego decompilar TODOS los .rpyc generados a .rpy
+python3 /home/kelsie/.local/share/unrpyc/unrpyc-master/unrpyc.py -c game/
+# Mover el .rpa procesado para evitar duplicados al recompilar
+mv game/scripts.rpa game/scripts.rpa.unpacked_bak
+```
+
+**Automatización (desde 2026-05-24):** el pipeline detecta este caso (`state="packed"` + `needs_unpack/needs_decompile`) y ejecuta unpack+decompile automáticamente en stage `analyze`. Settings en `tools/pipeline_settings.json` → `renpy.unrpa_bin`, `renpy.unrpyc_script`, `renpy.auto_unpack`.
+
+**Trampa POST-decompile:** si el juego viene con traducciones oficiales del autor (chinese, spanish, etc.) DENTRO del rpa, también se decompilan. NO traducir si ya hay tl/spanish/ completo — verificar primero:
+```bash
+# Conteo pending tras decompile
+grep -c 'old "' game/tl/spanish/*.rpy | awk -F: '{s+=$2}END{print s}'
+# Si pending == 0 → solo activar spanish con _force_spanish.rpy y listo
+```
+
+Caso real: **Stuck with my Ex's Family and Zombies** (2026-05-24) — 3 .rpa, todo compilado, tras decompile aparecieron 47 .rpy + tl/{chinese,japanese,portuguese,russian,spanish}/ del autor 100% completas. Cero traducción necesaria, solo `_force_spanish.rpy` para auto-arranque.
+
 **0.3 Decompilar `.rpyc` → `.rpy`** SOLO si faltan los fuentes. Detectar primero:
 ```powershell
 $rpyc = Get-ChildItem -Filter "*.rpyc" | Where-Object { -not (Test-Path ($_.FullName -replace '\.rpyc$','.rpy')) }
