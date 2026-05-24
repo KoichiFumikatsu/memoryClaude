@@ -21,9 +21,15 @@ Si el contexto de la sesión involucra traducción de juegos, leer además:
 
 Según el engine activo:
 - Ren'Py → [memory/tl-playbook-renpy.md](memory/tl-playbook-renpy.md)
+  - Si detecta `kps_build_conversation_list` o `© Kesash` en `phone.rpy` → además [memory/tl-playbook-kps-phone.md](memory/tl-playbook-kps-phone.md)
 - Unity → [memory/tl-unity-brief.md](memory/tl-unity-brief.md) + [memory/tl-playbook-unity.md](memory/tl-playbook-unity.md)
 - RPG Maker → [memory/tl-rpgmaker-brief.md](memory/tl-rpgmaker-brief.md) + [memory/tl-playbook-rpgmaker.md](memory/tl-playbook-rpgmaker.md)
 - GameMaker → [memory/tl-gamemaker-brief.md](memory/tl-gamemaker-brief.md) + [memory/tl-playbook-gamemaker.md](memory/tl-playbook-gamemaker.md)
+
+## AI Image Generation
+
+Si el contexto involucra generación de imágenes AI (SD.Next, Stable Diffusion, anime/SDXL/SD1.5, instalación en Torre 1), leer:
+- [memory/ai-image-local.md](memory/ai-image-local.md) — Estado: REMOVIDO de Fumilinux 2026-05-24. Plan migrar a Torre 1 RX 570. Aprendizajes técnicos preservados: trampas OpenVINO FX, URLs de modelos, prompts probados, métricas de comparación
 
 ## Memorias específicas por proyecto/refactor
 

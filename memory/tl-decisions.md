@@ -437,3 +437,17 @@ esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings
 **Decision:** adoptar extraccion estatica por scanner binario y normalizacion a JSONL estandar. Se crearon `tools/unity/extract_static_strings.py` y `tools/unity/prepare_static_corpus.py`. Primera corrida sobre `Hypno-Academy_Data` produjo 110892 strings unicos crudos y 3982 candidatos traducibles, luego normalizados a `static_strings_corpus.jsonl`.
 **Razon:** desbloquea el pipeline sin runtime hook, con salida reproducible y apta para MT por lotes (`source/target`). La muestra extraida incluye dialogo real de historia, nombres y UI, suficiente para continuar con traduccion masiva y luego reinyeccion.
 **Alternativas descartadas:** esperar un injector alterno antes de extraer (bloquea progreso); extraer manualmente en GUI (lento y no reproducible).
+### 2026-05-24 — Limits of Deviation Chapter 1: nuevo playbook KPS Phone System
+
+**Contexto:** Juego Ren'Py donde el pipeline estándar reportó éxito pero solo tradujo 1502 líneas de TL contra 5400+ líneas reales del juego en `phone.rpy` + `test_char_*.rpy`. Causa: el contenido vive en strings triple-quoted pasados a `kps_build_conversation_list("""...""")` (sistema "phone" custom del autor Kesash). El SDK de Ren'Py no detecta nada de eso.
+
+**Decisión:** Crear pipeline ad-hoc reusable:
+- `tools/tl/extract_kps_phone.py` — parsea ambos formatos (DSL plano + lista Python literal), emite JSONL con offsets exactos.
+- `tools/tl/reinject_kps_phone.py` — edición posicional in-place con backup `.kps_bak`, escapado por delimitador.
+- Playbook completo en `memory/tl-playbook-kps-phone.md`.
+
+**Resultado:** 587 strings (510 dialog + 51 system + 20 choice + 4 reply + 2 delete), 100% reinyectado, 0 mismatches. ZIP final 170MB en `~/Documents/games tl/LimitsofDeviation-Chapter_1-pc-spanish.zip`. Compile + lint OK.
+
+**Limitaciones aceptadas:** strings dentro de bloques `code: '''...'''` no se traducen (raros, suelen ser tutoriales del autor). F-strings tampoco (no usados en este juego).
+
+**Detección de futuros juegos KPS:** buscar `kps_build_conversation_list` o cabecera `© Kesash` en `phone.rpy`. Autor itch.io: `kesash`, Discord: `randomfox_`.
