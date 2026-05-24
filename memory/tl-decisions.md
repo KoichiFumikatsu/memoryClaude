@@ -480,3 +480,23 @@ esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings
 **Verificación:** detector retorna correctamente `{engine: "renpy", state: "packed", needs_unpack: true, needs_decompile: true}` para el juego problemático. Servicio `tlgames-pipeline` reiniciado.
 
 **Trampa documentada:** si tras decompile el juego trae traducción oficial del autor en `tl/<lang>/`, NO traducir — verificar pending con grep `'old "'` vs `'new ""'`. Caso Stuck Family Zombies: 1473 bloques translate, 474 strings, 0 pending → solo `_force_spanish.rpy` para auto-arranque.
+
+### 2026-05-24 — Norikascases2 v0.31: trampa detector + traduccion completa
+
+**Contexto:** Pipeline anterior tradujo solo `common.rpy` del sistema (303 strings de UI tipo "Self-voicing", "Clipboard"), dejando el juego completo sin tocar. Usuario veia ingles y ruso en juego porque `_force_spanish.rpy` activaba spanish pero `tl/spanish/` no tenia traduccion → Ren'Py caia al default (ruso).
+
+**Causa raiz:** Norikascases2 es ruso de origen. Autor incluyo `tl/english/` con 28 archivos (~120K lineas) como traduccion oficial. El juego principal viene en 33 `.rpyc` empaquetados + 1 `.rpy` accesorio (`WITHBLINK/WITHBLINK.rpy`). El detector contaba **rglob("*.rpy")** = 29 archivos (28 de tl/english + WITHBLINK) y reportaba `state="translated"`, sin activar auto-decompile.
+
+**Fix:**
+1. `detect_engine` ahora EXCLUYE `tl/<lang>/` y `_force_*.rpy` del conteo. Solo cuenta `.rpy` del juego real.
+2. Considera "packed" si hay >3 `.rpyc` huerfanos (sin .rpy compañero) o `.rpa`.
+3. Verificado: Noriko ahora retorna `state="packed", needs_decompile=true`.
+
+**Trabajo manual sobre Noriko:**
+- Decompilado con unrpyc master: 62 archivos (33 .rpyc del juego + 28 de tl/english + 1 common).
+- SDK `translate spanish`: generado `tl/spanish/` con 120758 lineas, 16075 bloques translate.
+- Strings pendientes: 16075, chars ~624K.
+- Provider forzado: OpenAI (DeepL exhausta 2026-05-24).
+- Costo estimado: $0.20-0.40 dentro de budget restante $1.23.
+
+**Decision spanish desde ruso vs ingles:** elegido traducir directamente ruso→español con OpenAI gpt-4.1-nano. Razon: simplicidad del pipeline. Si calidad insuficiente, alternativa: copiar `tl/english/*.rpy` reemplazando header `translate english` → `translate spanish` para usar ingles como base (mejor calidad MT, mismo numero strings).

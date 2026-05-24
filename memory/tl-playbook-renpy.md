@@ -108,6 +108,8 @@ grep -c 'old "' game/tl/spanish/*.rpy | awk -F: '{s+=$2}END{print s}'
 
 Caso real: **Stuck with my Ex's Family and Zombies** (2026-05-24) — 3 .rpa, todo compilado, tras decompile aparecieron 47 .rpy + tl/{chinese,japanese,portuguese,russian,spanish}/ del autor 100% completas. Cero traducción necesaria, solo `_force_spanish.rpy` para auto-arranque.
 
+**Trampa adicional (2026-05-24, caso Norikascases2):** `detect_engine` debe EXCLUIR `tl/<lang>/` del conteo de .rpy. Si un juego ruso/japonés trae `tl/english/*.rpy` del autor (28 archivos) pero el juego principal está en `.rpyc` empaquetado, contar SOLO los .rpy fuera de `tl/` daría 0 → correctamente reportado como `packed`. La heurística refinada también ignora `_force_*.rpy` (generados por el pipeline) y considera "packed" si hay >3 `.rpyc` huérfanos (sin .rpy compañero) o presencia de `.rpa`. Caso real: Norikascases2 v0.31 reportaba antes "translated" (29 .rpy) cuando en realidad 28 eran de tl/english y solo había 1 .rpy real (`WITHBLINK/WITHBLINK.rpy`). El pipeline solo traducía `common.rpy` del sistema interno de Ren'Py y dejaba todo el juego sin tocar.
+
 **0.3 Decompilar `.rpyc` → `.rpy`** SOLO si faltan los fuentes. Detectar primero:
 ```powershell
 $rpyc = Get-ChildItem -Filter "*.rpyc" | Where-Object { -not (Test-Path ($_.FullName -replace '\.rpyc$','.rpy')) }
