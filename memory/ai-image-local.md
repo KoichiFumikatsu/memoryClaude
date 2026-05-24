@@ -1,85 +1,85 @@
-# AI image generation local — SD.Next + OpenVINO en Fumilinux
+# AI image generation — Estado y aprendizajes
 
-**Operativo desde:** 2026-05-23
-**Path:** `/home/kelsie/projects/ai-image/sdnext/`
-**Backend:** OpenVINO FX sobre Intel Iris Xe iGPU (`Device: active="GPU"`)
-**UI:** http://127.0.0.1:7860/ (solo localhost; `--listen` solo si se necesita LAN)
+**Estado actual:** REMOVIDO de Fumilinux (`/home/kelsie/projects/ai-image/` borrado 2026-05-24, liberó 36 GB).
+**Razón:** Intel Iris Xe iGPU + OpenVINO 2026.1 + torch 2.11 + diffusers 0.39-dev solo soporta txt2img básico. Hires fix, detailer, img2img e inpaint disparan bug `FakeTensor` en OpenVINO FX backend. Sin posibilidad de iterar/refinar imágenes.
+**Plan:** Migrar a Torre 1 (AMD RX 570 8GB) — Linux con ROCm `HSA_OVERRIDE_GFX_VERSION=9.0.0`, o Windows con `--use-directml`/`--use-zluda`.
 
-## Comando de launch
+---
 
-```bash
-cd /home/kelsie/projects/ai-image/sdnext && \
-OPENVINO_DEVICE=GPU OPENVINO_TORCH_BACKEND_DEVICE=GPU \
-./venv/bin/python launch.py --use-openvino --debug
+## Para Torre 1: aprendizajes técnicos (no repetir errores)
+
+### SD.Next branch
+
+En Torre 1 con DirectML/ROCm/ZLUDA, usar **branch `master`**. El bug FakeTensor que obligó a usar `dev` en Fumilinux es específico de `openvino_fx`, no aparece en otros backends.
+
+### Modos `--lowvram`/`--medvram`
+
+- `--lowvram`: `accelerate.modeling._load_state_dict_into_meta_model:373` llama `param_cls(new_value, requires_grad=...)`. Falla solo en backends que parchean `Parameter` (OpenVINO). OK en CUDA/ROCm/DirectML.
+- `--medvram`: `model_cpu_offload` deja FakeTensors. OK fuera de OpenVINO FX.
+- Torre 1 con 8 GB VRAM dedicada probablemente no necesita offload para SD 1.5 ni SDXL. Si requiere: `--medvram` antes que `--lowvram`.
+
+### Modelos para re-descargar en Torre 1
+
+| Archivo | URL HuggingFace | Tamaño | Uso |
+|---|---|---|---|
+| `MeinaHentai - baked VAE.safetensors` | `Meina/MeinaMix` | 2 GB | NSFW + anatomía limpia (probado y mejor que CounterfeitV3) |
+| `Meina V10 - baked VAE.safetensors` | `Meina/MeinaMix` | 3.3 GB | General anime/manga limpio |
+| `AnimagineXL3` | `cagliostrolab/animagine-xl-3.0` | 6.4 GB | SDXL anime (ahora viable con GPU dedicada) |
+| `PonyDiffusionV6XL` | `AstraliteHeart/pony-diffusion-v6` | 6.5 GB | SDXL alternativo |
+| `CounterfeitV3` | `gsdf/Counterfeit-V3.0` | 4 GB | SD 1.5 base, opcional |
+| `AOM3A1B` | `WarriorMama777/OrangeMixs` | 2 GB | SD 1.5 alternativo |
+
+### Embeddings (descargar siempre, ~300 KB total)
+
+- `bad-hands-5.pt` (`yesyeahvh/bad-hands-5`)
+- `bad_prompt_version2.pt` (`datasets/Nerfgun3/bad_prompt`)
+- `ng_deepnegative_v1_75t.pt` (`lenML/DeepNegative`)
+- `EasyNegative.safetensors` (estándar comunidad)
+
+VAE para SD 1.5 sin baked-VAE: `kl-f8-anime2.ckpt` (`hakurei/waifu-diffusion-v1-4/vae`)
+
+### Prompt template NSFW probado (MeinaHentai, 2026-05-24)
+
+Composición POV: chica arrodillada mirando arriba, solo se ve el miembro masculino disembodied + cum en cara/boca.
+
+```
+prompt: (masterpiece:1.2), (best quality:1.2), (ultra-detailed:1.1), manga illustration, clean lineart, vibrant colors, very aesthetic, 1girl, solo, mature female, [traits...], kneeling on floor, looking up at viewer, head tilted up, mouth open, tongue out, (large penis:1.2), penis on face, disembodied penis, cum, (cum on face:1.3), (cum in mouth:1.3), facial, cum on tongue, cum string, blush, saliva, after fellatio, indoors, soft lighting, depth of field, detailed face, detailed eyes, pov perspective
+
+negative: EasyNegative, ng_deepnegative_v1_75t, bad_prompt_version2, bad-hands-5, (worst quality:1.4), (low quality:1.4), (extra hands:1.4), (extra arms:1.4), (extra fingers:1.4), (extra limbs:1.4), (floating limbs:1.4), fused fingers, malformed limbs, deformed, blurry, watermark, signature, text, censored, mosaic censoring, bar censor, jpeg artifacts, lowres, 1boy, multiple boys, male focus, male body, male torso, male legs
+
+settings: 512x768, 28 steps, CFG 6, DPM++ 2M + Karras, sd_vae None (baked-in MeinaHentai), CLIP skip 2
 ```
 
-**No usar `--lowvram` ni `--medvram` con OpenVINO.** Ambos rompen el backend FX.
-
-## Configuración crítica (debe mantenerse)
-
-1. **Branch `dev` de SD.Next** (`master` falla con torch 2.11.0+cpu / OpenVINO 2026.1.0).
-2. **Patch local en `modules/sd_models.py:848`** — no upstream:
-   ```python
-   "low_cpu_mem_usage": not shared.cmd_opts.use_openvino,
-   ```
-   Tras cualquier `git pull` verificar que siga aplicado.
-3. **`config.json`** raíz del repo:
-   ```json
-   {
-     "gradio_theme": "Default",
-     "openvino_devices": ["GPU"],
-     "openvino_disable_model_caching": false,
-     "openvino_disable_memory_cleanup": false
-   }
-   ```
-
-## Modelos descargados
-
-| Archivo | Tipo | Cabe en Fumilinux | Notas |
-|---|---|---|---|
-| `CounterfeitV3.safetensors` | SD 1.5 | sí | probado OK |
-| `AOM3A1B.safetensors` | SD 1.5 | sí | sin probar |
-| `AnimagineXL3.safetensors` | SDXL | **no** | causó OOM kill |
-| `PonyDiffusionV6XL.safetensors` | SDXL | **no** | no probado por riesgo OOM |
-| `models/VAE/kl-f8-anime2.ckpt` | VAE anime | — | disponible |
-| `models/embeddings/EasyNegative.safetensors` | embedding | — | usar en negative |
-
-## Performance medida (CounterfeitV3, 512x768, 20 steps, Euler a)
-
-- Primera generación (compila modelo a IR cache): **~110 s**
-- Subsecuentes con cache: ~30-50 s estimado
-- Velocidad: ~0.19 it/s
-
-## API: forzar modelo SD 1.5 en cada request
-
-SD.Next persiste el último modelo seleccionado de la UI entre reinicios. Si la UI quedó apuntando a SDXL (Animagine/Pony), siguiente arranque carga ese → cualquier txt2img API genera contra SDXL → OOM kill. **Incluir siempre en el body de la API**:
+### API settings críticos
 
 ```json
-"override_settings": {
-  "sd_model_checkpoint": "CounterfeitV3",
-  "sd_vae": "kl-f8-anime2.ckpt",
-  "CLIP_stop_at_last_layers": 2
-},
+"override_settings": {"sd_model_checkpoint": "<MODELO>", "sd_vae": "None", "CLIP_stop_at_last_layers": 2}
 "override_settings_restore_afterwards": false
 ```
 
-`override_settings_restore_afterwards: false` deja CounterfeitV3 cargado tras la generación.
+`override_settings_restore_afterwards: false` evita que SD.Next vuelva al último modelo seleccionado en UI (que puede ser SDXL pesado y reventar OOM en arranque siguiente).
 
-## Trampas (no repetir)
+### Tags para estilo
 
-1. **`--lowvram` rompe OpenVINO**: `accelerate.modeling._load_state_dict_into_meta_model:373` llama `param_cls(new_value, requires_grad=...)` pero el `param_cls` parcheado por OpenVINO no acepta ese kwarg → `TypeError`.
-2. **`--medvram` rompe OpenVINO**: `model_cpu_offload` deja `FakeTensor` en el grafo, OpenVINO no los puede convertir a IR (`AssertionError: FakeTensor detected` en `openvino/frontend/pytorch/utils.py:68`).
-3. **`low_cpu_mem_usage=True`** (default de diffusers) provoca el mismo FakeTensor → por eso el patch lo desactiva. Sin patch, master y dev fallan idéntico.
-4. **SDXL no cabe en Fumilinux**: 6.4 GB modelo + activaciones + python + OS + navegador requiere ~12-14 GB sin offload. iGPU comparte RAM con el sistema. Primer intento murió por OOM kill del kernel (visible en `journalctl --user --since "..." | grep -i oom`).
-5. **`--listen` expone también la IP pública del router** (no solo LAN). Solo añadir si necesario.
-6. **El cómputo siempre corre en el host de SD.Next**, no en el cliente del navegador. Abrir UI desde Torre no usa la RX 570 si SD.Next corre en Fumilinux.
+- B/N manga: `monochrome, manga style, screentone, dot pattern shading, ink lineart, manga panel, halftone`
+- Color manga: `manga illustration, clean lineart, vibrant flat colors, cel shading, soft pastel manga style`
+- Anatomía limpia: `realistic anime eyes, detailed eyes, defined pupils, natural hair flow, natural tongue, anatomically correct`
+- Artistas referencia Koichi: Wagashi, Kamuo (NSFW manga, soft pastel + clean lineart). Tags `by wagashi, by kamuo`. Efectividad depende del modelo. Si no funciona: buscar LoRAs específicos en CivitAI/HuggingFace.
 
-## Salidas y cache
+### Trampas Torre 1
 
-- Imágenes: `outputs/text/NNNNN-YYYY-MM-DD-<modelo>.jpg`
-- Cache de modelos compilados (IR): `cache/blob/` + `cache/model/` (puede crecer 10-15 GB)
+1. **RX 570 (Polaris GFX8) no soporta ROCm reciente directamente**. Workaround: `HSA_OVERRIDE_GFX_VERSION=9.0.0` en env. Sin ese flag → SD detecta solo CPU.
+2. **DirectML en Windows** funciona out-of-the-box con `--use-directml`. Más lento que ROCm pero estable.
+3. **ZLUDA en Windows** (traduce CUDA→AMD) lo más rápido para AMD Windows si compila — requiere HIP SDK 5.7+.
+4. Torre 1 actualmente con gachas/gaming Windows. Antes de migrar a Linux, evaluar dual-boot o instalar SD.Next en Windows (DirectML) primero para validar workflow sin commitearse al OS.
 
-## Decisiones pendientes
+### Métricas de referencia (Fumilinux Iris Xe, para comparar después)
 
-- **SDXL solo en hardware con GPU dedicada**. Esperar migración Torre 1 (RX 570) a Linux con ROCm + `HSA_OVERRIDE_GFX_VERSION=9.0.0`; alternativa intermedia: SD.Next en Torre 1 Windows con `--use-directml` o `--use-zluda` para AMD.
-- No actualizar SD.Next dev sin verificar antes que el patch siga aplicado.
+- SD 1.5 (CounterfeitV3 / MeinaHentai) 512x768 28 steps: **110-135 s por imagen** (OpenVINO compile cached)
+- Velocidad: ~0.19-0.28 it/s
+- SDXL: OOM kill consistente (no cabe en 24 GB RAM compartida)
+
+En Torre 1 con RX 570 8GB VRAM dedicada, esperar:
+- SD 1.5 512x768: ~15-30 s
+- SDXL 1024x1024: ~60-90 s
+- Hires fix + detailer accesibles
