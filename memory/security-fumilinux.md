@@ -78,13 +78,27 @@ $EDITOR ~/.vt.toml
 curl -s https://api.github.com/repos/VirusTotal/vt-cli/releases/latest | grep browser_download_url | grep Linux64
 ```
 
+## Extracción de archivos comprimidos
+
+Instalados 2026-05-24: `unrar` 7.0.7 (multiverse) + `p7zip-full`.
+
+**Trampa**: el extractor por defecto de GNOME/Nautilus usa `unrar-free`, que falla en RAR5 con mensaje cryptic `"unsupported block header size (was 7, max is 2)"`. NO es archivo corrupto — es el extractor viejo. Solución: extraer desde terminal con el `unrar` oficial:
+
+```bash
+unrar x archivo.rar      # extrae con estructura
+unrar l archivo.rar      # lista sin extraer
+7z x archivo.rar         # alternativa via p7zip-full
+```
+
+Casi todas las builds TL Games vienen en RAR5, así que esto aplica seguido.
+
 ## Workflow recomendado para descargas TL Games
 
 1. Bajar el archivo a `~/Downloads/` (NO ejecutar todavía)
 2. `scan ~/Downloads/<archivo>` → revisar ambos motores
 3. Si VT dice `unknown` y el origen es sketchy: `vt scan file <archivo>` y esperar
 4. Si ClamAV o VT detectan algo: borrar, NO ejecutar
-5. Solo extraer/ejecutar si ambos motores limpios
+5. Solo extraer/ejecutar si ambos motores limpios (si es `.rar`, usar `unrar x` desde terminal — ver sección arriba)
 
 Limitaciones:
 - `unknown` en VT no implica limpio. Para builds indie nuevos es lo normal.
