@@ -50,6 +50,21 @@ OPENVINO_DEVICE=GPU OPENVINO_TORCH_BACKEND_DEVICE=GPU \
 - Subsecuentes con cache: ~30-50 s estimado
 - Velocidad: ~0.19 it/s
 
+## API: forzar modelo SD 1.5 en cada request
+
+SD.Next persiste el último modelo seleccionado de la UI entre reinicios. Si la UI quedó apuntando a SDXL (Animagine/Pony), siguiente arranque carga ese → cualquier txt2img API genera contra SDXL → OOM kill. **Incluir siempre en el body de la API**:
+
+```json
+"override_settings": {
+  "sd_model_checkpoint": "CounterfeitV3",
+  "sd_vae": "kl-f8-anime2.ckpt",
+  "CLIP_stop_at_last_layers": 2
+},
+"override_settings_restore_afterwards": false
+```
+
+`override_settings_restore_afterwards: false` deja CounterfeitV3 cargado tras la generación.
+
 ## Trampas (no repetir)
 
 1. **`--lowvram` rompe OpenVINO**: `accelerate.modeling._load_state_dict_into_meta_model:373` llama `param_cls(new_value, requires_grad=...)` pero el `param_cls` parcheado por OpenVINO no acepta ese kwarg → `TypeError`.
