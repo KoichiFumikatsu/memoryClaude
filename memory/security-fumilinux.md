@@ -43,6 +43,20 @@ scan --vt-delay 16 <file>             # delay entre requests VT (default 16s = ~
 
 Salida: tabla por archivo con CLAMAV y VT (detected/total). Exit code 1 si hay detecciones.
 
+## Lanzadores tipo .bat
+
+Scripts:
+- `~/.local/bin/scan-downloads` — escanea ~/Downloads (ClamAV + VT). Log + pausa al final.
+- `~/.local/bin/scan-home` — escanea ~/ completo (solo ClamAV). Excluye caches, GoogleDrive, snap, browser caches.
+
+Logs: `~/.cache/scan/<target>-<timestamp>.log`
+
+.desktop launchers en `~/.local/share/applications/` (menú de apps via Super → "Escanear") y copias en `~/Desktop/` con `metadata::trusted=true` para doble-click.
+
+**Trampa Ubuntu 24.04 GNOME**: el escritorio NO muestra íconos por default. Habilitar "Desktop Icons NG (DING)" en Settings → Extensions. Sin extensión, funcionan solo desde el menú de apps.
+
+Terminal: `scan-downloads` o `scan-home`.
+
 Estados VT:
 - `N/M` — detected/total engines
 - `unknown` — archivo nunca visto por VT (NO significa limpio — nadie lo subió)
