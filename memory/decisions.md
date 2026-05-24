@@ -7,6 +7,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 ## Decisions
 
+**[2026-05-23] AI image local — SD.Next + OpenVINO operativo en Fumilinux** — Setup funcional: branch `dev` + patch en `modules/sd_models.py:848` (`low_cpu_mem_usage: not use_openvino`). Backend OpenVINO FX targeting Intel Iris Xe iGPU. SD 1.5 únicamente; SDXL no entra (OOM). No usar `--lowvram` ni `--medvram` (rompen FX por accelerate). Detalle en `ai-image-local.md`.
+*Why: combo torch 2.11+cpu/OpenVINO 2026.1 que SD.Next master pinea tiene bug FakeTensor en el path de compilación FX. El patch fuerza materialización eager. Costo: ~110s primera generación SD 1.5, ~30-50s subsecuentes con cache.*
+
 **[2026-05-22] TL Games — QA migrado a Groq** — `qa_renpy.py` ahora dispatcher `auto|groq|ollama`. Groq `llama-3.1-8b-instant` por default (free tier, 270x más rápido que Ollama CPU). Detalle en `tl-refactor-5-stages.md`.
 *Why: Ollama llama3.2:3b saturaba CPU local; lint_qa stage timeout consistente. Groq free tier 14400 req/día > suficiente para uso personal.*
 
