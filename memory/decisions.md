@@ -7,6 +7,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 ## Decisions
 
+**[2026-05-25] AZCKeeper — testing del cliente C# vía RDP/SSH a portátil descartado** — Pruebas del cliente WinForms se hacen desde Fumilinux conectándose vía RDP (GUI) + SSH (CLI) a un portátil Windows reutilizado de los descartados de AZC. NO se usa VM (preferencia por hardware real) NO se usa Wine (SetWinEventHook + DPAPI + KeyBlocker no son representativos bajo Wine). Cliente RDP: xfreerdp/Remmina. Nota: Koichi indica que el setup RDP/SSH "a mano no le suele funcionar" — explicar siempre el procedimiento completo cuando se use.
+*Why: Fumilinux no corre Windows y construir todo en VM es ciclo lento + falsos negativos en KeyBlocker/stealth. Los portátiles descartados existen, son gratis, y dan banco de pruebas físico equivalente al de un usuario final.*
+
 **[2026-05-24] AI image local — REMOVIDO de Fumilinux, migrar a Torre 1** — `/home/kelsie/projects/ai-image/` borrado (36 GB liberados). El stack txt2img básico SD 1.5 funcionaba pero hires fix, detailer, img2img e inpaint disparan bug FakeTensor consistente en OpenVINO FX backend. Sin posibilidad de refinement → la iGPU Iris Xe llegó al techo para este caso de uso. Aprendizajes (trampas, URLs, prompts probados, settings) preservados en `ai-image-local.md` para configuración futura en Torre 1 (RX 570 con DirectML/ZLUDA en Windows o ROCm en Linux con `HSA_OVERRIDE_GFX_VERSION=9.0.0`).
 *Why: estabilidad multi-stage (hires, img2img) es requisito para uso real; el bug FakeTensor no se puede patchear quirúrgicamente — aparece en cada path nuevo. GPU dedicada elimina el problema completo.*
 
