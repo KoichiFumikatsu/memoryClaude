@@ -74,9 +74,9 @@ Loader con cache + mtime reload. API: `get_all()`, `get(path: str, default)`, `w
 
 ### `tools/tl/_deepl.py` (CREADO)
 Centraliza:
-- `DEEPL_FREE_QUOTA_REAL = 1_000_000` (bug API reporta 500K)
+- `DEEPL_FREE_QUOTA_REAL = 500_000` (verificado 2026-05-24 contra `/v2/usage`. Antes era `1_000_000` con doubling de la respuesta API; era mito y se corrigio)
 - `get_keys()` — pool desde env vars `DEEPL_API_KEY*`
-- `check_usage(key)` — GET /v2/usage con corrector bug 500K
+- `check_usage(key)` — GET /v2/usage; devuelve respuesta API tal cual (sin corrector)
 - `check_quota_pool(keys)` — suma chars disponibles del pool
 - `is_exhausted_today()` / `mark_exhausted_today()` — estado en `.cache/deepl_quota_state.json`
 

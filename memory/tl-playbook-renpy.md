@@ -26,7 +26,7 @@ con calidad razonable y mínimo trabajo manual. Construido sobre el caso
 ### API Translation
 | Provider | Tier | Limitación | Comentario |
 |---|---|---|---|
-| **DeepL Free** | gratis con registro | 1M chars/mes (dashboard); el endpoint `/v2/usage` puede devolver 500k por bug — confiar en el dashboard | Calidad alta. Key con suffix `:fx`. Default. |
+| **DeepL Free** | gratis con registro | **500K chars/mes** (oficial; verificado 2026-05-24 contra `/v2/usage`). El dashboard web puede mostrar otras metricas, pero la API es la verdad operativa. | Calidad alta. Key con suffix `:fx`. Default. |
 | MyMemory | gratis con email | ~10k palabras/día | Calidad media. Útil si DeepL agota. |
 
 ### Variables de entorno
@@ -337,7 +337,7 @@ Notas:
 
 #### Alternativa: Gemini batch (solo si el usuario lo pide explícitamente)
 
-Si el juego excede los ~1M chars/mes de DeepL Free (caso típico: novelas
+Si el juego excede los **~500K chars/mes** de DeepL Free (verificado 2026-05-24; antes se asumia 1M por mito; caso típico: novelas
 visuales largas, p.ej. Maeves Academy con ~1M chars), usar Gemini en modo
 batch:
 
@@ -442,7 +442,7 @@ Cambiar idioma desde Preferences → Language → Español.
 | Crash al lanzar diálogo | bug decompilado en `screen say` | Añadir defaults perdidos a parámetros |
 | Strings con `\r\n` rompen compile | Sanitizer no aplicado | Re-correr `translate.py` (sanitizer integrado) |
 | "Don no..." en español | DeepL malinterpreta `Don't` | `python tools\tl\postprocess.py --all` |
-| Cuota DeepL agotada | 1M chars/mes (verificar en dashboard, no en API) | Cambiar a `--provider openai` (default `gpt-4.1-nano`, ver fase 4 fallback). Gemini solo si el usuario lo pide. |
+| Cuota DeepL agotada | **500K chars/mes** (oficial, verificado contra `/v2/usage` 2026-05-24) | Cambiar a `--provider openai` (default `gpt-4.1-nano`, ver fase 4 fallback). Gemini solo si el usuario lo pide. |
 | Cuota MyMemory agotada | ~10k palabras/día | Esperar 24h o pasar a DeepL/Gemini |
 | Cuota Gemini agotada | 1000 RPD lite / 250 RPD flash | Esperar al reset diario (medianoche Pacífico) o cambiar de modelo. |
 | Strings sin traducir tras run | bloque ya tenía contenido (skip por diseño) | Borrar el target con script y re-correr |

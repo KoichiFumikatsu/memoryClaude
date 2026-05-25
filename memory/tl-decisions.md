@@ -304,7 +304,7 @@ Al hacer `systemctl restart` o `fuser -k 8766/tcp`, el server muere pero el subp
 **Razón:** sin esto el usuario no podía cambiar al idioma traducido aunque `tl/spanish/` existiera.
 
 ### 2026-04-24 — Migración a DeepL Free como provider principal
-**Contexto:** MyMemory traducía mal frases comunes ("don't worry" → "Don no te preocupes", "completely" duplicado, etc.). Cuota agotada a los 564/2916 diálogos. API key de DeepL Free disponible (1M chars/mes según dashboard; el endpoint `/v2/usage` reporta 500k pero es discrepancia conocida — confiar en dashboard). Key con suffix `:fx` indica free tier.
+**Contexto:** MyMemory traducía mal frases comunes ("don't worry" → "Don no te preocupes", "completely" duplicado, etc.). Cuota agotada a los 564/2916 diálogos. API key de DeepL Free disponible. Key con suffix `:fx` indica free tier. **[Nota retroactiva 2026-05-24]** este registro afirmaba 1M chars/mes "segun dashboard" — incorrecto: la API `/v2/usage` reporta `character_limit=500000`, que es el valor oficial Free. Ver decision 2026-05-24 sobre correccion del mito.
 **Decisión:** añadir adapter DeepL en `translate.py` con flag `--provider deepl|mymemory`, default `deepl`. Cache separado en `.cache/deepl.json`. API key vía env `DEEPL_API_KEY` o `--deepl-key`. Endpoint `https://api-free.deepl.com/v2/translate`.
 **Razón:** calidad notablemente superior, cuota suficiente para un juego completo (FromTheSin ~250k chars), formato XML `tag_handling` opcional. MyMemory sigue disponible como fallback.
 **Alternativas descartadas:** Google Translate (sin tier gratis serio); LibreTranslate self-hosted (overhead innecesario para uso personal).
@@ -414,7 +414,7 @@ enpy.exe . compile) y resolver errores de sintaxis.
 **Razón:** editar a mano 7645 líneas no es viable. Patrón único y determinista, regex simple. Caso real: Maeves pasó de 7645 errores a 0 tras una pasada.
 **Alternativas descartadas:** parchear unrpyc (más invasivo, no garantiza estabilidad para futuros juegos); recompilar desde otra fuente (no disponible); ignorar warnings (compile aborta, no son warnings).
 ### 2026-04-26 — Gemini 2.5-flash-lite + batch como alternativa a DeepL para volumen
-**Contexto:** Maeves Academy Witcher tiene ~1M chars EN→ES; DeepL Free agota su cupo de 1M/mes con un solo juego. Probada Gemini API: en single-string el free tier de gemini-2.5-flash es 250 RPD, inviable para ~25k strings. Se descubrió que el problema era no usar batching.
+**Contexto:** Maeves Academy Witcher tiene ~1M chars EN→ES; DeepL Free agota su cupo de **500K**/mes con medio juego (este registro original decia 1M; corregido retroactivamente 2026-05-24 — la cuota real verificada via `/v2/usage` es 500K). Probada Gemini API: en single-string el free tier de gemini-2.5-flash es 250 RPD, inviable para ~25k strings. Se descubrió que el problema era no usar batching.
 **Decisión:** implementar gemini_translate_batch en 	ranslate.py que envía un JSON array a Gemini (con 
 esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings por request. Default: gemini-2.5-flash-lite (15 RPM, 1000 RPD, 250k TPM) con batch_size=25 → ~25k strings/día. Fallback automático per-item si el batch falla (size mismatch / PROHIBITED_CONTENT), y de ahí a DeepL si hay key.
 **Razón:** lite cubre la mayoría de juegos en una jornada manteniendo calidad aceptable (verificado en Maeves: tono natural, tildes, tags {i}{w=1.0} preservadas). Para diálogo delicado o calidad superior queda --gemini-model gemini-2.5-flash (250 RPD pero con batch sigue rindiendo). Las cuotas son por proyecto, no por key — escalado vertical mediante batch_size, no múltiples keys.
@@ -518,3 +518,44 @@ esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings
 **Alternativas descartadas:** (a) lint manual ad-hoc por juego sin tocar pipeline — perdería el beneficio para juegos futuros; (b) lint manual + integrar despues — innecesario porque la integración era simple.
 
 **Mejoras pendientes documentadas** en `tl-playbook-rpgmaker.md` (prompt max_length, glosario de abreviaciones, re-prompt automatico) y en `tl-playbook-renpy.md` (portar OVERFLOW a `lint.py`, auto-shrink font, abreviaciones). No bloqueantes — son playbook futuro.
+
+---
+
+## 2026-05-24 — Correccion del mito "DeepL Free son 1M chars/mes"
+
+**Problema descubierto:** el codebase asumia que DeepL Free reportaba 1M chars/mes y que la API tenia un "bug" devolviendo la mitad (500K). Verificado contra `/v2/usage` con key `:fx` Free activa: la API devuelve `character_limit=500000` correctamente. **El plan Free oficial son 500K/mes**, no 1M. El "bug de API" era un mito.
+
+**Impacto operativo:**
+- Pipeline pre-decision de provider creia tener 1M disponibles cuando solo habia 500K.
+- Para juegos > 500K pero < 1M chars: el preflight elegia DeepL, consumia los 500K reales, recibia HTTP 456 (quota exceeded) y caia a OpenAI fallback con corte abrupto.
+- Para juegos > 1M chars (To the Demon Queen 2.5M): preflight elegia OpenAI directo, lo cual era correcto.
+
+**Fix aplicado:**
+- `tools/tl/_deepl.py`: `DEEPL_FREE_QUOTA_REAL = 500_000` (antes 1_000_000). Eliminada la sobreescritura `if character_limit == 500_000: data["character_limit"] = 1_000_000`.
+- `tools/tl/_settings.py`: `deepl.free_quota_chars = 500_000`.
+- `tools/pipeline_settings.json`: `deepl.free_quota_chars = 500000`.
+- `tools/tl/translate_unity_json.py`: `_stats.deepl_chars_limit = 500_000`. Comentario "bug API reporta la mitad" eliminado.
+- Servicio `tlgames-pipeline` reiniciado. `/health` ahora reporta `total_limit:500000, available:500000, source:api`.
+
+**Por que el dashboard web de DeepL puede mostrar otra cifra:** el dashboard cuenta otras metricas (translaciones via web translator, glosarios, uso historico, etc.). La API es la verdad operativa para el pipeline; cualquier divergencia con el dashboard es responsabilidad de DeepL.
+
+**Memorias historicas corregidas retroactivamente:** se anadio nota en `decisions.md` linea 322 (entrada 2026-04-24) y linea 432 (entrada 2026-04-26). Tambien en `tl-playbook-renpy.md` (tabla de providers y trampas) y `tl-refactor-5-stages.md`.
+
+---
+
+## 2026-05-24 — Unity Addressables sin sistema JSON nativo: XUnity runtime como fallback estandar
+
+**Problema:** juego Chrono Ecstasy v0.4.0 (Unity Mono, 314g-on) usa Addressables (`StreamingAssets/aa/StandaloneWindows64/`). El pipeline lo rechaza con `unity_sin_sistema_json_nativo` porque solo automatiza Unity con `Translations/<lang>/*.json` (caso The Demon Lord's Lover). El texto vive empaquetado en bundles → extraccion estatica con UnityPy es trabajo manual extenso + patch_addressables_bundle_crc.py.
+
+**Decision:** usar XUnity.AutoTranslator + BepInEx como path por defecto para Unity Mono **sin** JSON nativo. Es traduccion en runtime (no modifica assets), instalacion < 5 min, sin codigo custom por juego.
+
+**Stack instalado en Chrono Ecstasy v0.4.0 (referencia):**
+- BepInEx 5.4.23.2 x64 Mono Unity
+- XUnity.AutoTranslator 5.4.5 + ResourceRedirector
+- Config: `Endpoint=DeepLTranslate` (scraper web, no requiere API key) + `FallbackEndpoint=GoogleTranslateV2`. `FromLanguage=en Language=es`.
+
+**Correccion de memoria critica sobre BepInEx doorstop:** la regla anterior decia "doorstop winhttp.dll puede no hookear si el .exe no importa winhttp.dll → fallback a extraccion estatica". Esto era **incompleto**. La verdad: Windows resuelve `winhttp.dll` adyacente al exe antes que System32 para cualquier modulo del proceso. Si `UnityPlayer.dll` importa `WINHTTP.dll` (lo normal en Unity moderno), el proxy carga igual. **Gating correcto:** verificar con `objdump -p UnityPlayer.dll | grep WINHTTP` — si aparece, BepInEx hookea. En Chrono Ecstasy: el exe solo importa UnityPlayer+KERNEL32, pero UnityPlayer.dll importa WINHTTP, dwmapi, VERSION, OPENGL32, WINMM, IPHLPAPI, etc. → BepInEx OK.
+
+**API key oficial DeepL en XUnity:** XUnity DeepLTranslate.dll NO consume API key — usa scraping. Para usar la key Free (500K/mes) habria que: (a) montar proxy local Flask que reciba GET y reenvie a `/v2/translate` con Authorization, configurado en XUnity con `Endpoint=CustomTranslate`. Documentado como mejora futura en `Chrono Ecstasy v0.4.0/README_TRADUCCION.txt`.
+
+**Trade-off conscientemente aceptado:** scraper DeepL es frágil (Google/DeepL bloquean periodicamente). Fallback Google cubre cuando se rompe. Para juegos donde XUnity falle completamente, queda extraccion estatica con UnityPy como camino #2.
