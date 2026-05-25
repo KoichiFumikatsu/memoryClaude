@@ -37,12 +37,25 @@ Marca pública bajo la que Koichi publica traducciones EN→ES de videojuegos. P
 | Banner Twitter/X | `1:6` | Listo |
 | Post Release 1080×1080 | `1:16` | Template listo |
 
+## Sitio web — `/home/kelsie/projects/kelsietl/web/kelsietl-web`
+
+Construido 2026-05-25. Stack: Next.js 16.2.6 + Tailwind v4 + TypeScript + Supabase (mock fallback activo mientras no haya proyecto Supabase disponible).
+
+- Dev: `npm run dev` → localhost:3000
+- Admin: `/admin`, contraseña en `.env.local`
+- Supabase bloqueado: free tier tiene 2 proyectos activos (household-os + DnDev). Hay que pausar uno para conectar.
+- **Tailwind v4 trampa clave:** `@import url()` fonts ANTES de `@import "tailwindcss"` en globals.css.
+- **Fix visual:** cards usaban `bg-card` ≈ `bg-bg` → info section invisible → solución: shadow + gradientes por engine como placeholder thumbnail.
+- **Bug corregido:** admin sidebar aparecía en el login form → layout.tsx ahora condicional por auth state.
+
 ## Estado del proyecto
 
 - [x] Identidad visual completa
 - [x] Assets base en Figma
 - [x] Repo local + estructura de carpetas
+- [x] Sitio web completo (público + admin, mock data)
+- [ ] Supabase conectado (pausar household-os o DnDev)
 - [ ] Logo principal → avatar derivado
 - [ ] GitHub remote
 - [ ] Cuentas: Twitter/X, Discord, Patreon
-- [ ] Web
+- [ ] Deploy en Vercel
