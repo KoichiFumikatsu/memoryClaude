@@ -7,6 +7,9 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 ## Decisions
 
+**[2026-05-25] Claude Code launchers GNOME — 5 lanzadores .desktop por proyecto** — Creados en `~/.local/share/applications/claude-*.desktop`: TL Games (acceptEdits), Compañero (plan), Voice Assistant (default), AZCKeeper (plan), KelsieApp (plan). Todos con Opus 4.7. Patrón Exec usa `gnome-terminal --working-directory + bash -c "claude --model claude-opus-4-7 --permission-mode <mode> --name '<Proyecto>'; exec bash"`. Trampa documentada: `/init` NO carga contexto (lo crea); el contexto se carga automáticamente por cwd. Detalle completo en `claude-launchers-fumilinux.md`.
+*Why: abrir Claude preconfig con un click en lugar de cd+flags manuales. Modo por proyecto: producción crítica (AZCKeeper/KelsieApp/Compañero) en plan para forzar planeación; TL Games en acceptEdits por iteración alta sobre scripts; Voice Assistant default por estar en producción pero no crítico.*
+
 **[2026-05-25] AZCKeeper — testing del cliente C# vía RDP/SSH a portátil descartado** — Pruebas del cliente WinForms se hacen desde Fumilinux conectándose vía RDP (GUI) + SSH (CLI) a un portátil Windows reutilizado de los descartados de AZC. NO se usa VM (preferencia por hardware real) NO se usa Wine (SetWinEventHook + DPAPI + KeyBlocker no son representativos bajo Wine). Cliente RDP: xfreerdp/Remmina. Nota: Koichi indica que el setup RDP/SSH "a mano no le suele funcionar" — explicar siempre el procedimiento completo cuando se use.
 *Why: Fumilinux no corre Windows y construir todo en VM es ciclo lento + falsos negativos en KeyBlocker/stealth. Los portátiles descartados existen, son gratis, y dan banco de pruebas físico equivalente al de un usuario final.*
 
