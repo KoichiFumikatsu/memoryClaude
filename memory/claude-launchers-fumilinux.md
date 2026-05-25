@@ -26,7 +26,7 @@ gnome-terminal --title="Claude <Proyecto>" --working-directory=<path> -- bash -c
 
 - `; exec bash` mantiene el terminal abierto al cerrar Claude.
 - `--name` etiqueta la sesión en prompt box y `/resume`.
-- Icon=`utilities-terminal` (genérico — reemplazar por icono custom si se desea).
+- Icon=`/home/kelsie/.local/share/icons/claude.png` (PNG oficial 338×338 descargado de `https://claude.ai/images/claude_app_icon.png` el 2026-05-25).
 
 ## Carpetas placeholder creadas
 
