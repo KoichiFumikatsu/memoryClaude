@@ -500,3 +500,21 @@ esponseSchema=ARRAY of STRING para forzar mismo N de items) y resuelve N strings
 - Costo estimado: $0.20-0.40 dentro de budget restante $1.23.
 
 **Decision spanish desde ruso vs ingles:** elegido traducir directamente ruso→español con OpenAI gpt-4.1-nano. Razon: simplicidad del pipeline. Si calidad insuficiente, alternativa: copiar `tl/english/*.rpy` reemplazando header `translate english` → `translate spanish` para usar ingles como base (mejor calidad MT, mismo numero strings).
+
+---
+
+## 2026-05-24 — Lint RPGMaker integrado al pipeline
+
+**Problema observado:** ultima traduccion (To the Demon Queen!!, RPGMaker MV/MZ, job `b4d2d148`) completo `translate` y `package` pero salto `lint_qa` con `engine_unsupported`. Por diseño anterior: `_v2_lint_qa()` solo procesaba `engine == "renpy"`.
+
+**Decision:** crear `tools/tl/lint_rpgmaker.py` y enchufarlo al stage `lint_qa` para engine rpgmaker. Compara `<data>/<archivo>.json.bak` (source EN) vs `<archivo>.json` (target ES) usando las mismas rutas que `translate_rpgmaker.extract_strings()`.
+
+**Checks emitidos:** CTRL (control codes `\C[n] \I[n] \N[n] \V[n] \P[n] \G %1..%9`), EMPTY, UNCHANGED (filtra nombres propios CamelCase y speaker labels `[Nombre]`), EN_RESID (heurística suave), OVERFLOW (source < 30 chars + ratio > 1.4 → riesgo desborde labels/choices/botones), EXPAND (ratio > 1.6).
+
+**Validado end-to-end con job `66aaca99`** (mismo juego, re-corrido tras restart del servicio): `lint_qa: done`, 905 issues / 4764 strings / 47 archivos. Salida en `job.lint_report` y `job.stages.lint_qa.details`. No bloqueante.
+
+**Ajuste de pesos:** `STAGE_PCT["rpgmaker"]` rebalanceado de `translate:80 / lint_qa:0 / package:10` a `translate:75 / lint_qa:5 / package:10`.
+
+**Alternativas descartadas:** (a) lint manual ad-hoc por juego sin tocar pipeline — perdería el beneficio para juegos futuros; (b) lint manual + integrar despues — innecesario porque la integración era simple.
+
+**Mejoras pendientes documentadas** en `tl-playbook-rpgmaker.md` (prompt max_length, glosario de abreviaciones, re-prompt automatico) y en `tl-playbook-renpy.md` (portar OVERFLOW a `lint.py`, auto-shrink font, abreviaciones). No bloqueantes — son playbook futuro.

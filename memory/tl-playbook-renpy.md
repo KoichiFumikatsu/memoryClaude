@@ -470,6 +470,17 @@ Cambiar idioma desde Preferences → Language → Español.
 - Glosario no es contextual: un término ambiguo va al MT con la oración entera.
 - `--add-markers` no edita el target, solo señala (la edición es decisión humana).
 
+**Limitaciones de lint conocidas (2026-05-24):**
+- `tools/tl/lint.py` revisa `{tags}`, `[vars]`, `|placeholders|`, `\n`, `SENTINEL`, `UNCHANGED` y `EXPAND > 1.5x` solo para source >= 20 chars. **No flagea overflow en strings cortos** (botones, choices, labels de menu).
+- Ren'Py SDK `lint` reporta "dialogue too long" solo para `say`, no para `screen`.
+- Casos historicos: `"Achievements" → "Logros"` cabe; `"Quick Save" → "Guardado Rapido"` se desborda. Choices de 2 lineas EN pueden volverse 3 en ES.
+
+**Mejoras pendientes de lint Ren'Py (playbook futuro, no bloqueantes):**
+1. Portar check `OVERFLOW` de `lint_rpgmaker.py` a `lint.py`: source < 30 chars y ratio > 1.4 → reportar.
+2. Prompt con `max_length` explicito para strings que vienen de screen labels / choices (cuando el extractor pueda distinguirlos del flujo `say`).
+3. Auto-shrink font en screens criticas via `adjust_spacing`, `xfit/yfit`, `text_align`, `min_width` — absorbe expansion moderada sin tocar la traduccion.
+4. Glosario de abreviaciones canonicas para terminos que rompen layout (`Configuracion → Ajustes`, etc.).
+
 ---
 
 ## 5. Para el siguiente juego: checklist mínima
