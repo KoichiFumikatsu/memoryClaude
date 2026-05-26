@@ -2,6 +2,11 @@
 
 ## Session Initialization
 
+**PRIMERO — antes de leer cualquier archivo:** ejecuta git pull para tener el contexto más reciente de cualquier sesión anterior en otra máquina:
+```
+cd ~/memoryClaude-main && git pull origin main 2>/dev/null || true
+```
+
 At the start of every session, read the following files before doing anything else:
 
 - [memory/personality.md](memory/personality.md) — **read first** — defines how to think, communicate, and make decisions for this user
