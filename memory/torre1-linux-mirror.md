@@ -63,6 +63,16 @@ nextcloud, sublime-text, cups, firefox, thunderbird
 - ~/.claude/ + ~/.claude.json, ~/.local/share/applications/ (corregidos), ~/.local/share/icons/
 - ~/.local/bin/, ~/memoryClaude-main/, ~/.config/rclone/, ~/.var/app/easyeffects/
 
+## Git configurado (2026-05-26)
+- user.name / user.email configurados
+- SSH key de GitHub activa (misma que Fumilinux, copiada a ~/.ssh/id_ed25519)
+- `git pull` y `git push` funcionando desde `~/memoryClaude-main`
+
+## Incidentes conocidos
+- **GPU reset amdgpu (2026-05-26):** RX 570 hizo reset automático en primer arranque → pantalla se congeló → sistema se recuperó solo. Normal con GFX8 + ROCm. No es daño de hardware.
+- **Nextcloud snap desactivado:** loop infinito de errores PHP saturando CPU. `sudo snap disable nextcloud`. Torre 1 no es servidor Nextcloud.
+- **GRUB_DEFAULT trap:** SD.Next pidió cambiar a kernel 6.8 para ROCm HIP. Revertir siempre a `GRUB_DEFAULT=0` + `sudo update-grub`. Kernel estable: 6.17.0-29-generic.
+
 ## Pendiente manual (4 items)
 | Item | Acción |
 |---|---|
