@@ -1,80 +1,71 @@
-# Torre 1 — Linux Setup + Mirror desde Fumilinux
+# Torre 1 — Linux Setup completado 2026-05-26
 
 ## Hardware Torre 1
-- GPU: AMD RX 570 8GB (Polaris, GFX8)
-- OS actual: Windows — candidata a Linux
-- Uso objetivo: AI generation local + gaming con Proton
+- GPU: AMD RX 570 8GB (Polaris, GFX8 / gfx803)
+- OS: Ubuntu 24.04 LTS (instalado 2026-05-26)
+- Uso: AI generation local + gaming con Proton
 
-## OS elegido
-Ubuntu 24.04 LTS — misma que Fumilinux para consistencia total de stack.
+## Acceso SSH desde Fumilinux
+- IP: 192.168.12.7, puerto 22
+- Usuario principal: `kelsielinux` (NO es `kelsie` — trampa crítica)
+- Usuario root: también tiene acceso SSH con la misma clave
+- Clave: `~/.ssh/id_ed25519` de Fumilinux → autorizada en Torre 1
+- `kelsielinux` tiene sudo NOPASSWD
 
-**Razón:** Consistencia con Fumilinux (mismos comandos, rutas, servicios systemd, Docker, scripts). El workaround ROCm para RX 570 (`HSA_OVERRIDE_GFX_VERSION=9.0.0`) está documentado principalmente en Ubuntu. Nobara descartada por sacar del ecosistema apt.
+**TRAMPA:** El usuario en Torre 1 es `kelsielinux`, no `kelsie`. Todos los paths son `/home/kelsielinux/`. Los servicios systemd y lanzadores .desktop fueron corregidos con sed al migrar.
 
-## Plan de mirror — 7 pasos
+## Stack instalado (2026-05-26)
 
-### Paso 1 — Instalar Ubuntu 24.04 + habilitar SSH en Torre 1
-```bash
-sudo apt install openssh-server -y
-sudo systemctl enable --now ssh
-```
+### Core
+- Claude Code 2.1.150 (Node.js 24.15.0)
+- Docker CE 29.1.3 + docker-compose-plugin + buildx
+- n8n (docker, puerto 5678, volumen n8n_data)
+- Ollama 0.24.0 + modelo llama3.2:3b
+- MCP ollama-mcp configurado en ~/.claude.json
 
-### Paso 2 — Exportar lista de paquetes desde Fumilinux
-```bash
-dpkg --get-selections | grep -v deinstall > ~/paquetes-fumilinux.txt
-flatpak list --app --columns=application > ~/flatpaks-fumilinux.txt
-```
+### AI / GPU
+- ROCm 6.4 vía amdgpu-install — RX 570 detectada como gfx803
+- `HSA_OVERRIDE_GFX_VERSION=9.0.0` en ~/.bashrc y ~/.profile
+- kelsielinux en grupos render y video
 
-### Paso 3 — Sincronizar por SSH (LAN) desde Fumilinux a Torre 1
-```bash
-# Reemplazar TORRE_IP con la IP local de Torre 1
-rsync -avz --progress ~/projects/ kelsie@TORRE_IP:~/projects/
-rsync -avz --progress ~/.config/ kelsie@TORRE_IP:~/.config/
-rsync -avz --progress ~/.local/share/applications/ kelsie@TORRE_IP:~/.local/share/applications/
-rsync -avz ~/.claude.json kelsie@TORRE_IP:~/
-```
+### Apps apt
+vlc, ffmpeg, mpv, rhythmbox, flameshot, gnome-screenshot, imagemagick,
+remmina (+rdp/vnc/secret), thunderbird, yt-dlp, aria2,
+7zip, p7zip-full, unrar, cabextract, copyq, transmission-gtk, deja-dup,
+clamav (+daemon +freshclam), language-pack-es/ja, hunspell-es/en,
+python3.12-venv, cmake, meson, ninja-build, autoconf, automake,
+mesa-utils, xdotool, xclip, file-roller, simple-scan, gnome-calendar,
+wine64 9.0, wine32:i386, winetricks, lutris 0.5.14,
+gnome-shell-extension-manager, pavucontrol, vulkan-tools, clinfo,
+zoom 7.x, anydesk 6.x, parsec, java 21 (openjdk-21-jre),
+rclone v1.74.2, flatpak, snapd
 
-### Paso 4 — Restaurar paquetes en Torre 1
-```bash
-sudo dpkg --set-selections < ~/paquetes-fumilinux.txt
-sudo apt-get dselect-upgrade -y
-while read app; do flatpak install flathub "$app" -y; done < ~/flatpaks-fumilinux.txt
-```
+### Apps Flatpak
+- EasyEffects 8.2.4 + preset microfono-limpio copiado
+- Sweet Home 3D 7.5
 
-### Paso 5 — Docker + n8n + Ollama (reinstalar, no copiar)
-```bash
-sudo apt install docker.io docker-compose -y
-sudo usermod -aG docker kelsie
+### Snaps
+discord, steam, blender 5.1.2, code (VS Code), godot-4 4.6.1,
+nextcloud, sublime-text, cups, firefox, thunderbird
 
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.2:3b
+### Servicios systemd (usuario)
+- suwayomi-server.service — activo (Java 21 + JAR en ~/apps/suwayomi/)
+- vector.service — habilitado (venv pendiente de instalar dependencias)
+- voice-notifier.service — habilitado (idem)
+- rclone-gdrive.service — habilitado (OAuth pendiente)
 
-sudo docker run -d --name n8n -p 5678:5678 \
-  -v ~/.n8n:/home/node/.n8n n8nio/n8n
-```
+### Herramientas de seguridad
+- vt-cli 1.3.1 + ~/.vt.toml (API key copiada desde Fumilinux)
+- scan / scan-downloads / scan-home en ~/.local/bin/
 
-### Paso 6 — Servicios systemd
-Los archivos `.service` ya se copian con el rsync de ~/.config/systemd/user/ en Paso 3.
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now tlgames-pipeline tlgames-qa tlgames-versions
-systemctl --user enable --now vector suwayomi
-```
+## Archivos sincronizados desde Fumilinux
+- ~/projects/ (4.3GB), ~/apps/, ~/.config/systemd/user/
+- ~/.claude/ + ~/.claude.json, ~/.local/share/applications/ (corregidos), ~/.local/share/icons/
+- ~/.local/bin/, ~/memoryClaude-main/, ~/.config/rclone/, ~/.var/app/easyeffects/
 
-### Paso 7 — Claude Code
-```bash
-npm install -g @anthropic-ai/claude-code
-# ~/.claude.json ya copiado en Paso 3
-```
-
-## Items que requieren configuración manual
-
-| Item | Por qué | Acción |
-|---|---|---|
-| rclone Google Drive | Token OAuth es por máquina | `rclone config` de nuevo, autenticar con misma cuenta Google |
-| EasyEffects preset | Ruta Flatpak distinta hasta instalar | Instalar Flatpak primero, luego copiar preset desde ~/.var/app/... |
-| ROCm / HSA para RX 570 | Específico de hardware AMD GFX8 | Instalar ROCm + setear `HSA_OVERRIDE_GFX_VERSION=9.0.0` |
-| GNOME keybindings/temas | Dependen del monitor/hardware | Se copian pero pueden necesitar ajuste visual |
-
-## Estado
-- Pendiente: Torre 1 sigue en Windows (2026-05-26)
-- No ejecutado aún — documentado para cuando Koichi arranque la instalación
+## Pendiente manual (3 items)
+| Item | Acción |
+|---|---|
+| rclone Google Drive | `rclone config reconnect gdrive:` en Torre 1 |
+| n8n workflows | Exportar desde Fumilinux localhost:5678 → importar en 192.168.12.7:5678 |
+| Vector venv | `cd ~/voice-assistant && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` |

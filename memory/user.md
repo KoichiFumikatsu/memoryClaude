@@ -86,9 +86,12 @@ Cali · 2016 – 2021
 ## Hardware — Torres Windows
 
 **Torre 1 (principal para AI/GPU):**
-- GPU: AMD RX 570 8GB (Polaris, GFX8)
-- OS: Windows (actual) — candidata a Linux para AI generation
-- Nota: ROCm no soporta GFX8 en versiones recientes; workaround `HSA_OVERRIDE_GFX_VERSION=9.0.0` funciona para SD
+- GPU: AMD RX 570 8GB (Polaris, GFX8 / gfx803)
+- OS: Ubuntu 24.04 LTS — instalado y clonado desde Fumilinux el 2026-05-26
+- IP LAN: 192.168.12.7, SSH puerto 22, usuario `kelsielinux` (trampa: NO es `kelsie`)
+- ROCm 6.4 instalado, RX 570 detectada, `HSA_OVERRIDE_GFX_VERSION=9.0.0` activo
+- Stack completo: Claude Code, Docker CE + n8n, Ollama + llama3.2:3b, Wine, Steam, Blender, etc.
+- Pendiente: rclone OAuth, n8n workflows, Vector venv
 
 **Torre 2:**
 - GPU: AMD RX 6500 XT 4GB (RDNA2, Navi 24) — **candidata a venta/upgrade**

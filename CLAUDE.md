@@ -31,6 +31,16 @@ Según el engine activo:
 Si el contexto involucra generación de imágenes AI (SD.Next, Stable Diffusion, anime/SDXL/SD1.5, instalación en Torre 1), leer:
 - [memory/ai-image-local.md](memory/ai-image-local.md) — Estado: REMOVIDO de Fumilinux 2026-05-24. Plan migrar a Torre 1 RX 570. Aprendizajes técnicos preservados: trampas OpenVINO FX, URLs de modelos, prompts probados, métricas de comparación
 
+## Torre 1 — Linux + Mirror
+
+Si el contexto involucra instalar Linux en Torre 1 o replicar el entorno de Fumilinux, leer:
+- [memory/torre1-linux-mirror.md](memory/torre1-linux-mirror.md) — Torre 1 completamente clonada desde Fumilinux (2026-05-26). Usuario `kelsielinux`, IP 192.168.12.7. ROCm activo. Pendiente: rclone OAuth, n8n workflows, Vector venv.
+
+## Kelsie TL — Brand Project
+
+Si el contexto involucra la marca pública Kelsie TL (identidad visual, redes sociales, web, releases), leer:
+- [memory/kelsietl-brand.md](memory/kelsietl-brand.md) — sistema visual completo, assets Figma, estado del proyecto, decisiones tomadas
+
 ## Memorias específicas por proyecto/refactor
 
 Cuando un proyecto tiene un refactor mayor, decisiones arquitectónicas extensas o documentación de un flujo completo que excede `decisions.md`, crear un archivo dedicado `<proyecto>-<tema>.md` en `memory/` y enlazarlo aquí. Reglas:
