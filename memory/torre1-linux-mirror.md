@@ -63,9 +63,18 @@ nextcloud, sublime-text, cups, firefox, thunderbird
 - ~/.claude/ + ~/.claude.json, ~/.local/share/applications/ (corregidos), ~/.local/share/icons/
 - ~/.local/bin/, ~/memoryClaude-main/, ~/.config/rclone/, ~/.var/app/easyeffects/
 
-## Pendiente manual (3 items)
+## Pendiente manual (4 items)
 | Item | Acción |
 |---|---|
+| **Kernel downgrade** | `sudo apt install linux-image-6.8.0-31-generic` → reboot → seleccionar en GRUB → requerido para ROCm HIP |
 | rclone Google Drive | `rclone config reconnect gdrive:` en Torre 1 |
 | n8n workflows | Exportar desde Fumilinux localhost:5678 → importar en 192.168.12.7:5678 |
 | Vector venv | `cd ~/voice-assistant && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` |
+
+## SD.Next — Estado 2026-05-26 (parcial, bloqueado por kernel)
+
+- Clonado en `/home/kelsielinux/apps/sdnext/` (master)
+- venv en `apps/sdnext/venv/`, PyTorch 2.9.1+rocm6.3 instalado
+- `torch/lib/libamdhip64.so` → symlink a `/opt/rocm/lib/libamdhip64.so` (fix pthread_setaffinity_np)
+- Bloqueado: kernel 6.17 causa segfault en `hipGetDeviceCount` (HIP init path incompatible con ROCm 6.4)
+- Ver detalles completos y pasos post-reboot en `memory/ai-image-local.md`

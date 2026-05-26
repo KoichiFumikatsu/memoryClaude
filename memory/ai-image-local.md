@@ -1,8 +1,17 @@
 # AI image generation — Estado y aprendizajes
 
-**Estado actual:** REMOVIDO de Fumilinux (`/home/kelsie/projects/ai-image/` borrado 2026-05-24, liberó 36 GB).
-**Razón:** Intel Iris Xe iGPU + OpenVINO 2026.1 + torch 2.11 + diffusers 0.39-dev solo soporta txt2img básico. Hires fix, detailer, img2img e inpaint disparan bug `FakeTensor` en OpenVINO FX backend. Sin posibilidad de iterar/refinar imágenes.
-**Plan:** Migrar a Torre 1 (AMD RX 570 8GB) — Linux con ROCm `HSA_OVERRIDE_GFX_VERSION=9.0.0`, o Windows con `--use-directml`/`--use-zluda`.
+**Estado actual Torre 1 (2026-05-26):** SD.Next clonado, PyTorch instalado, **bloqueado por kernel 6.17 incompatible con ROCm 6.4**. Pendiente reboot con kernel 6.8.0-31 para continuar.
+
+**Historia:** REMOVIDO de Fumilinux (`/home/kelsie/projects/ai-image/` borrado 2026-05-24, liberó 36 GB).
+**Razón original:** Intel Iris Xe iGPU + OpenVINO 2026.1 + torch 2.11 + diffusers 0.39-dev solo soporta txt2img básico. Hires fix, detailer, img2img e inpaint disparan bug `FakeTensor` en OpenVINO FX backend. Sin posibilidad de iterar/refinar imágenes.
+
+## Estado instalación Torre 1 (2026-05-26) — PARCIAL, pendiente reboot
+
+- SD.Next clonado: `/home/kelsielinux/apps/sdnext/` (branch `master`)
+- venv: `/home/kelsielinux/apps/sdnext/venv/`
+- PyTorch instalado: `2.9.1+rocm6.3`
+- Fix aplicado: `torch/lib/libamdhip64.so` → symlink a `/opt/rocm/lib/libamdhip64.so` (reemplaza bundled ROCm 6.3 que tenía `pthread_setaffinity_np` undefined)
+- **BLOQUEADO:** `hipGetDeviceCount` segfault — ver sección "Trampas Torre 1 Kernel"
 
 ---
 
@@ -68,10 +77,33 @@ settings: 512x768, 28 steps, CFG 6, DPM++ 2M + Karras, sd_vae None (baked-in Mei
 
 ### Trampas Torre 1
 
-1. **RX 570 (Polaris GFX8) no soporta ROCm reciente directamente**. Workaround: `HSA_OVERRIDE_GFX_VERSION=9.0.0` en env. Sin ese flag → SD detecta solo CPU.
-2. **DirectML en Windows** funciona out-of-the-box con `--use-directml`. Más lento que ROCm pero estable.
-3. **ZLUDA en Windows** (traduce CUDA→AMD) lo más rápido para AMD Windows si compila — requiere HIP SDK 5.7+.
-4. Torre 1 actualmente con gachas/gaming Windows. Antes de migrar a Linux, evaluar dual-boot o instalar SD.Next en Windows (DirectML) primero para validar workflow sin commitearse al OS.
+1. **RX 570 (Polaris GFX8) no soporta ROCm reciente directamente**. Workaround: `HSA_OVERRIDE_GFX_VERSION=9.0.0` en env. Sin ese flag → SD detecta solo CPU. Ya configurado en `~/.bashrc` y `~/.profile`.
+
+2. **PyTorch wheel bundlea libamdhip64 incompatible con sistema.** El wheel ROCm 6.3 de pytorch.org incluye `torch/lib/libamdhip64.so` que tiene `pthread_setaffinity_np` undefined en Ubuntu 24.04. Fix: reemplazar con symlink al sistema: `ln -s /opt/rocm/lib/libamdhip64.so venv/lib/python3.12/site-packages/torch/lib/libamdhip64.so`. Ya aplicado.
+
+3. **Kernel 6.17 incompatible con ROCm 6.4 en el path HIP init.** `rocminfo` y `rocm-smi` funcionan (HSA level OK). `hipGetDeviceCount` segfault con GDB stack: `libhsa-runtime64.so.1 → pthread_once → SIGSEGV` (después de cargar COMGR). El crash ocurre en el path de init que HIP usa pero `rocminfo` no. **Fix: boot con kernel 6.8.0-31-generic** (disponible en apt, es el target certificado de ROCm 6.4 para Ubuntu 24.04).
+   ```bash
+   sudo apt install linux-image-6.8.0-31-generic linux-headers-6.8.0-31-generic
+   # Seleccionar en GRUB: Advanced options → 6.8.0-31-generic
+   sudo reboot
+   ```
+
+4. **DirectML en Windows** funciona out-of-the-box con `--use-directml`. Más lento que ROCm pero estable.
+
+5. **ZLUDA en Windows** (traduce CUDA→AMD) lo más rápido para AMD Windows si compila — requiere HIP SDK 5.7+.
+
+### Pasos post-reboot para completar SD.Next
+
+Después de confirmar que `hipGetDeviceCount > 0` con kernel 6.8:
+```bash
+cd /home/kelsielinux/apps/sdnext
+source venv/bin/activate
+# Verificar GPU primero:
+python3 -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+# Lanzar SD.Next:
+HSA_OVERRIDE_GFX_VERSION=9.0.0 python launch.py --backend rocm --listen --port 7860
+```
+Primer lanzamiento instala dependencias adicionales (~5-10 min). Descargar MeinaHentai primero para prueba rápida.
 
 ### Métricas de referencia (Fumilinux Iris Xe, para comparar después)
 
