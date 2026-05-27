@@ -41,8 +41,10 @@
 - MCP ollama-mcp configurado en ~/.claude.json
 
 ### AI / GPU
-- ROCm 6.4 vía amdgpu-install — RX 570 detectada como gfx803
-- `HSA_OVERRIDE_GFX_VERSION=9.0.0` en ~/.bashrc y ~/.profile
+- **ROCm/HIP REMOVIDO 2026-05-27** — stack completo (17 GB, 60+ paquetes, /opt/rocm-6.4.0, /opt/amdgpu) purgado vía `amdgpu-install --uninstall`. Inservible con kernel 6.17 (segfault hipGetDeviceCount). Reemplazado por Vulkan/RADV (parte de Mesa estándar).
+- Stack activo: Mesa 25.2.8 + RADV (Vulkan 1.4.318) — driver `radv`, device `AMD Radeon RX 570 Series (RADV POLARIS10)`
+- `HSA_OVERRIDE_GFX_VERSION` removido de ~/.bashrc y ~/.profile (ya no aplica)
+- `libgl1-amber-dri` (Mesa 21 legacy) también purgado
 - kelsielinux en grupos render y video
 
 ### Apps apt
@@ -90,18 +92,26 @@ nextcloud, sublime-text, cups, firefox, thunderbird
 - **Nextcloud snap desactivado:** loop infinito de errores PHP saturando CPU. `sudo snap disable nextcloud`. Torre 1 no es servidor Nextcloud.
 - **GRUB_DEFAULT trap:** SD.Next pidió cambiar a kernel 6.8 para ROCm HIP. Revertir siempre a `GRUB_DEFAULT=0` + `sudo update-grub`. Kernel estable: 6.17.0-29-generic.
 
-## Pendiente manual (4 items)
+## Pendiente manual
 | Item | Acción |
 |---|---|
-| **Kernel downgrade** | `sudo apt install linux-image-6.8.0-31-generic` → reboot → seleccionar en GRUB → requerido para ROCm HIP |
-| rclone Google Drive | `rclone config reconnect gdrive:` en Torre 1 |
 | n8n workflows | Exportar desde Fumilinux localhost:5678 → importar en 192.168.12.7:5678 |
 | Vector venv | `cd ~/voice-assistant && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` |
+| **Upgrade hardware** | Ryzen 5 5500 + 16 GB DDR4 (canibalizar de otra torre con misma board). Resuelve cuello RAM/swap definitivamente. |
 
-## SD.Next — Estado 2026-05-26 (parcial, bloqueado por kernel)
+**OBSOLETO:** Kernel downgrade a 6.8 ya no aplica — ROCm/HIP descartado, Vulkan funciona con kernel 6.17 mainline.
 
-- Clonado en `/home/kelsielinux/apps/sdnext/` (master)
-- venv en `apps/sdnext/venv/`, PyTorch 2.9.1+rocm6.3 instalado
-- `torch/lib/libamdhip64.so` → symlink a `/opt/rocm/lib/libamdhip64.so` (fix pthread_setaffinity_np)
-- Bloqueado: kernel 6.17 causa segfault en `hipGetDeviceCount` (HIP init path incompatible con ROCm 6.4)
-- Ver detalles completos y pasos post-reboot en `memory/ai-image-local.md`
+**rclone Google Drive:** RESUELTO (2026-05-27) — OAuth activo, FUSE montado en ~/GoogleDrive, sincronizando.
+
+## Optimizaciones de sistema (2026-05-27)
+- `vm.swappiness=10` persistente en `/etc/sysctl.d/99-performance.conf`
+- CPU governor `performance` persistente vía `/etc/systemd/system/cpu-performance.service` (habilitado)
+- Servicios desactivados: `anydesk` (inútil en Wayland), `ModemManager` (sin modem), `avahi-daemon` (mDNS innecesario), `snap.cups.cups-browsed`
+- **Nota:** Torre 1 corre GNOME en **Wayland** (no Xorg como Fumilinux). AnyDesk no funciona como host.
+- Ryzen 5 2400G, 7.7GB DDR4 2400MHz. Con Steam activo: swap al 100% — cerrar Steam para liberar ~600MB.
+
+## SD.Next — ELIMINADO 2026-05-27
+- `/home/kelsielinux/apps/sdnext/` borrado. Reemplazado por `stable-diffusion.cpp` con backend Vulkan.
+- Stack ROCm/HIP que SD.Next requería también purgado (ver sección AI/GPU arriba).
+- Pony Diffusion V6 XL corre en sd-server vía Vulkan a 768×768 / 20 steps en ~7min.
+- Ver detalles en `memory/ai-image-local.md`.
