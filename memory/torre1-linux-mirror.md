@@ -109,6 +109,7 @@ nextcloud, sublime-text, cups, firefox, thunderbird
 - Servicios desactivados: `anydesk` (inútil en Wayland), `ModemManager` (sin modem), `avahi-daemon` (mDNS innecesario), `snap.cups.cups-browsed`
 - **Nota:** Torre 1 corre GNOME en **Wayland** (no Xorg como Fumilinux). AnyDesk no funciona como host.
 - Ryzen 5 2400G, 7.7GB DDR4 2400MHz. Con Steam activo: swap al 100% — cerrar Steam para liberar ~600MB.
+- **RAM OOM (2026-05-27):** Con Firefox + 2×Claude Code + Ollama + Open WebUI + n8n + GNOME, la RAM se agota y el swap llega al 100% → OOM killer mata procesos. Solución: parar Ollama/Open WebUI/n8n cuando no se usen (`sudo systemctl stop ollama && sudo docker stop open-webui n8n`). `drop_caches` también libera ~1.2 GB de cache de disco sin riesgo. `swapoff -a` NO es viable con 3+ GB en swap y solo 2 GB libres — se mata solo.
 
 ## SD.Next — ELIMINADO 2026-05-27
 - `/home/kelsielinux/apps/sdnext/` borrado. Reemplazado por `stable-diffusion.cpp` con backend Vulkan.
