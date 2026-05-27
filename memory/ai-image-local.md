@@ -1,6 +1,8 @@
 # AI image generation — Estado y aprendizajes
 
-**Workspace de proyecto:** `~/projects/ia-gen/` — README + symlinks a `outputs/` y `models/` + `scripts/` con wrappers + `prompts/` + `video/` (placeholder futuro). Ver `~/projects/ia-gen/README.md`.
+**Workspace de proyecto:** `~/projects/ia-gen/` — README + symlinks a `outputs/` y `models/` + `scripts/` con wrappers + `prompts/` + `video/` (placeholder futuro). Ver `~/projects/ia-gen/README.md` y `~/projects/ia-gen/CLAUDE.md` (este último se autocarga al abrir Claude Code en el workspace, contiene config funcional default).
+
+**Launcher Desktop:** `~/Desktop/ia-gen-claude.desktop` — abre terminal en `~/projects/ia-gen/` y arranca `claude`. Junto a `sdcpp-webui.desktop` (port 7860) y `open-webui.desktop` (port 3000).
 
 **Estado actual Torre 1 (2026-05-27):** `stable-diffusion.cpp` compilado con backend Vulkan (RADV). ROCm/HIP descartado — crash irrecuperable en kernel 6.17. Stack activo: Vulkan + PonyDiffusion V6 XL safetensors fp16.
 
