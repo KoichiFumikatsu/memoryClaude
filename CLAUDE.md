@@ -31,10 +31,10 @@ Según el engine activo:
 - RPG Maker → [memory/tl-rpgmaker-brief.md](memory/tl-rpgmaker-brief.md) + [memory/tl-playbook-rpgmaker.md](memory/tl-playbook-rpgmaker.md)
 - GameMaker → [memory/tl-gamemaker-brief.md](memory/tl-gamemaker-brief.md) + [memory/tl-playbook-gamemaker.md](memory/tl-playbook-gamemaker.md)
 
-## AI Image Generation
+## AI Image / Video Generation
 
-Si el contexto involucra generación de imágenes AI (SD.Next, Stable Diffusion, anime/SDXL/SD1.5, instalación en Torre 1), leer:
-- [memory/ai-image-local.md](memory/ai-image-local.md) — Estado: REMOVIDO de Fumilinux 2026-05-24. Plan migrar a Torre 1 RX 570. Aprendizajes técnicos preservados: trampas OpenVINO FX, URLs de modelos, prompts probados, métricas de comparación
+Si el contexto involucra generación de imágenes o video AI (Stable Diffusion, Pony, SDXL, anime, AnimateDiff, SVD, instalación en Torre 1, `~/projects/ia-gen/`), leer:
+- [memory/ai-image-local.md](memory/ai-image-local.md) — Estado activo: sdcpp + Vulkan + PonyDiffusion V6 XL en Torre 1. Workspace en `~/projects/ia-gen/`. Open WebUI con OpenAI/Groq/Gemini pre-configurado. Aprendizajes: trampas Vulkan, OOM VAE, métricas, prompts Pony.
 
 ## Torre 1 — Linux + Mirror
 

@@ -1,117 +1,115 @@
 # AI image generation — Estado y aprendizajes
 
-**Estado actual Torre 1 (2026-05-26):** SD.Next clonado, PyTorch instalado, **bloqueado por kernel 6.17 incompatible con ROCm 6.4**. Pendiente reboot con kernel 6.8.0-31 para continuar.
+**Workspace de proyecto:** `~/projects/ia-gen/` — README + symlinks a `outputs/` y `models/` + `scripts/` con wrappers + `prompts/` + `video/` (placeholder futuro). Ver `~/projects/ia-gen/README.md`.
 
-**Historia:** REMOVIDO de Fumilinux (`/home/kelsie/projects/ai-image/` borrado 2026-05-24, liberó 36 GB).
-**Razón original:** Intel Iris Xe iGPU + OpenVINO 2026.1 + torch 2.11 + diffusers 0.39-dev solo soporta txt2img básico. Hires fix, detailer, img2img e inpaint disparan bug `FakeTensor` en OpenVINO FX backend. Sin posibilidad de iterar/refinar imágenes.
+**Estado actual Torre 1 (2026-05-27):** `stable-diffusion.cpp` compilado con backend Vulkan (RADV). ROCm/HIP descartado — crash irrecuperable en kernel 6.17. Stack activo: Vulkan + PonyDiffusion V6 XL safetensors fp16.
 
-## Estado instalación Torre 1 (2026-05-26) — PARCIAL, pendiente reboot
+**Plan a futuro:** seguir pruebas de imagen → empezar generación de video (evaluar AnimateDiff, SVD, CogVideoX, LTX-Video).
 
-- SD.Next clonado: `/home/kelsielinux/apps/sdnext/` (branch `master`)
-- venv: `/home/kelsielinux/apps/sdnext/venv/`
-- PyTorch instalado: `2.9.1+rocm6.3`
-- Fix aplicado: `torch/lib/libamdhip64.so` → symlink a `/opt/rocm/lib/libamdhip64.so` (reemplaza bundled ROCm 6.3 que tenía `pthread_setaffinity_np` undefined)
-- **BLOQUEADO:** `hipGetDeviceCount` segfault — ver sección "Trampas Torre 1 Kernel"
+**Ruta actual:** `stable-diffusion.cpp` + Vulkan/RADV + PonyDiffusion V6 XL (SDXL). No usa ROCm ni HIP. GPU detectada como `RADV POLARIS10`, Vulkan 1.4.318.
 
----
+## Open WebUI + Ollama (apoyo para prompts)
 
-## Para Torre 1: aprendizajes técnicos (no repetir errores)
+- Container Docker `open-webui` en `localhost:3000`, auto-restart, volumen `open-webui`.
+- Pre-configurado con 3 providers OpenAI-compatibles via env vars al `docker run`:
+  - OpenAI (`https://api.openai.com/v1`)
+  - Groq (`https://api.groq.com/openai/v1`)
+  - Gemini (`https://generativelanguage.googleapis.com/v1beta/openai`)
+- Keys cargadas desde `~/projects/tlgames/.env` (OPENAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY).
+- Ollama reconfigurado con override systemd `OLLAMA_HOST=0.0.0.0:11434` (default era 127.0.0.1, container no llegaba).
+- Icono Desktop: `~/Desktop/open-webui.desktop`.
+- **Limitación RAM:** Torre 1 solo tiene 8GB RAM, no 24GB como Fumilinux. llama3.2:3b (2.3GB) no carga si sd-server + Open WebUI + Firefox están activos simultáneamente. Para generación de prompts via Ollama desde script: descargar `llama3.2:1b` (1.3GB) o liberar RAM.
+- Script `gen-from-desc.sh` en `~/apps/sdcpp/` traduce descripción ES → prompt Pony via Ollama → genera. Funcional pero limitado por RAM disponible.
 
-### SD.Next branch
+## Stack actual Torre 1
 
-En Torre 1 con DirectML/ROCm/ZLUDA, usar **branch `master`**. El bug FakeTensor que obligó a usar `dev` en Fumilinux es específico de `openvino_fx`, no aparece en otros backends.
+- **Binary:** `/home/kelsielinux/apps/sdcpp/build/bin/sd-server` y `sd-cli`
+- **Launch:** `/home/kelsielinux/apps/sdcpp/launch.sh` — arranca servidor en `0.0.0.0:7860`, backend `vulkan0`, flags: `--fa --vae-tiling`
+- **Generación rápida:** `/home/kelsielinux/apps/sdcpp/gen.sh "PROMPT" "NEGATIVE" [flags]`
+- **WebUI/API:** `http://localhost:7860` (o `http://192.168.12.7:7860` desde Fumilinux)
+- **Outputs:** `/home/kelsielinux/apps/sdcpp/outputs/`
+- **Modelos:** `/home/kelsielinux/apps/sdcpp/models/checkpoints/`
 
-### Modos `--lowvram`/`--medvram`
+## Modelos instalados
 
-- `--lowvram`: `accelerate.modeling._load_state_dict_into_meta_model:373` llama `param_cls(new_value, requires_grad=...)`. Falla solo en backends que parchean `Parameter` (OpenVINO). OK en CUDA/ROCm/DirectML.
-- `--medvram`: `model_cpu_offload` deja FakeTensors. OK fuera de OpenVINO FX.
-- Torre 1 con 8 GB VRAM dedicada probablemente no necesita offload para SD 1.5 ni SDXL. Si requiere: `--medvram` antes que `--lowvram`.
-
-### Modelos para re-descargar en Torre 1
-
-| Archivo | URL HuggingFace | Tamaño | Uso |
+| Archivo | Tamaño | Estado | Uso |
 |---|---|---|---|
-| `MeinaHentai - baked VAE.safetensors` | `Meina/MeinaMix` | 2 GB | NSFW + anatomía limpia (probado y mejor que CounterfeitV3) |
-| `Meina V10 - baked VAE.safetensors` | `Meina/MeinaMix` | 3.3 GB | General anime/manga limpio |
-| `AnimagineXL3` | `cagliostrolab/animagine-xl-3.0` | 6.4 GB | SDXL anime (ahora viable con GPU dedicada) |
-| `PonyDiffusionV6XL` | `AstraliteHeart/pony-diffusion-v6` | 6.5 GB | SDXL alternativo |
-| `CounterfeitV3` | `gsdf/Counterfeit-V3.0` | 4 GB | SD 1.5 base, opcional |
-| `AOM3A1B` | `WarriorMama777/OrangeMixs` | 2 GB | SD 1.5 alternativo |
+| `PonyDiffusionV6XL.safetensors` | 6.5 GB | **ACTIVO — modelo principal** | SDXL, alta calidad, NSFW explícito |
+| `PonyDiffusionV6XL-Q5_0.gguf` | 2.9 GB | **ROTO — genera ruido** | Descartado |
+| `MeinaHentai-baked-VAE-Q5_0.gguf` | 1.6 GB | Funcional, calidad menor | SD 1.5 fallback rápido |
+| `MeinaHentai-baked-VAE.safetensors` | 2.0 GB | Original SD 1.5 | Puede borrarse |
 
-### Embeddings (descargar siempre, ~300 KB total)
+## Métricas reales medidas (2026-05-27)
 
-- `bad-hands-5.pt` (`yesyeahvh/bad-hands-5`)
-- `bad_prompt_version2.pt` (`datasets/Nerfgun3/bad_prompt`)
-- `ng_deepnegative_v1_75t.pt` (`lenML/DeepNegative`)
-- `EasyNegative.safetensors` (estándar comunidad)
+| Modelo | Resolución | Steps | Sampler | Tiempo |
+|---|---|---|---|---|
+| MeinaHentai Q5_0 + FA | 512×512 | 20 | dpm++2m | ~1m35s |
+| MeinaHentai Q5_0 + FA | 512×768 | 28 | dpm++2m | ~3m45s |
+| PonyDiffusion fp16 + FA + VAE-tiling | 768×768 | 20 | dpm++2m | ~7m21s |
+| PonyDiffusion fp16 + FA + VAE-tiling | 768×768 | 20 | dpm++2m | ~9m14s (con prompt largo, 35+ tags) |
+| PonyDiffusion fp16 + FA + VAE-tiling | 832×1216 | 30 | dpm++2mv2 | ~8m22s |
 
-VAE para SD 1.5 sin baked-VAE: `kl-f8-anime2.ckpt` (`hakurei/waifu-diffusion-v1-4/vae`)
+**Resolución máxima confirmada:** 832×1216 (vertical SDXL nativo) NO hace OOM con `--vae-tiling`. 1024×1024 sí falla en VAE decode incluso con tiling.
 
-### Prompt template NSFW probado (MeinaHentai, 2026-05-24)
+**Hallazgo:** `dpm++2mv2` converge más eficiente que `dpm++2m` — más steps en menos tiempo total. Usar por defecto.
 
-Composición POV: chica arrodillada mirando arriba, solo se ve el miembro masculino disembodied + cum en cara/boca.
+## Settings por modelo
 
-```
-prompt: (masterpiece:1.2), (best quality:1.2), (ultra-detailed:1.1), manga illustration, clean lineart, vibrant colors, very aesthetic, 1girl, solo, mature female, [traits...], kneeling on floor, looking up at viewer, head tilted up, mouth open, tongue out, (large penis:1.2), penis on face, disembodied penis, cum, (cum on face:1.3), (cum in mouth:1.3), facial, cum on tongue, cum string, blush, saliva, after fellatio, indoors, soft lighting, depth of field, detailed face, detailed eyes, pov perspective
+### PonyDiffusion V6 XL (SDXL) — configuración probada
 
-negative: EasyNegative, ng_deepnegative_v1_75t, bad_prompt_version2, bad-hands-5, (worst quality:1.4), (low quality:1.4), (extra hands:1.4), (extra arms:1.4), (extra fingers:1.4), (extra limbs:1.4), (floating limbs:1.4), fused fingers, malformed limbs, deformed, blurry, watermark, signature, text, censored, mosaic censoring, bar censor, jpeg artifacts, lowres, 1boy, multiple boys, male focus, male body, male torso, male legs
-
-settings: 512x768, 28 steps, CFG 6, DPM++ 2M + Karras, sd_vae None (baked-in MeinaHentai), CLIP skip 2
-```
-
-### API settings críticos
-
-```json
-"override_settings": {"sd_model_checkpoint": "<MODELO>", "sd_vae": "None", "CLIP_stop_at_last_layers": 2}
-"override_settings_restore_afterwards": false
-```
-
-`override_settings_restore_afterwards: false` evita que SD.Next vuelva al último modelo seleccionado en UI (que puede ser SDXL pesado y reventar OOM en arranque siguiente).
-
-### Tags para estilo
-
-- B/N manga: `monochrome, manga style, screentone, dot pattern shading, ink lineart, manga panel, halftone`
-- Color manga: `manga illustration, clean lineart, vibrant flat colors, cel shading, soft pastel manga style`
-- Anatomía limpia: `realistic anime eyes, detailed eyes, defined pupils, natural hair flow, natural tongue, anatomically correct`
-- Artistas referencia Koichi: Wagashi, Kamuo (NSFW manga, soft pastel + clean lineart). Tags `by wagashi, by kamuo`. Efectividad depende del modelo. Si no funciona: buscar LoRAs específicos en CivitAI/HuggingFace.
-
-### Trampas Torre 1
-
-1. **RX 570 (Polaris GFX8) no soporta ROCm reciente directamente**. Workaround: `HSA_OVERRIDE_GFX_VERSION=9.0.0` en env. Sin ese flag → SD detecta solo CPU. Ya configurado en `~/.bashrc` y `~/.profile`.
-
-2. **PyTorch wheel bundlea libamdhip64 incompatible con sistema.** El wheel ROCm 6.3 de pytorch.org incluye `torch/lib/libamdhip64.so` que tiene `pthread_setaffinity_np` undefined en Ubuntu 24.04. Fix: reemplazar con symlink al sistema: `ln -s /opt/rocm/lib/libamdhip64.so venv/lib/python3.12/site-packages/torch/lib/libamdhip64.so`. Ya aplicado.
-
-3. **Kernel 6.17 incompatible con ROCm 6.4 en el path HIP init.** `rocminfo` y `rocm-smi` funcionan (HSA level OK). `hipGetDeviceCount` segfault con GDB stack: `libhsa-runtime64.so.1 → pthread_once → SIGSEGV` (después de cargar COMGR). El crash ocurre en el path de init que HIP usa pero `rocminfo` no. **Fix: boot con kernel 6.8.0-31-generic** (disponible en apt, es el target certificado de ROCm 6.4 para Ubuntu 24.04).
-   ```bash
-   sudo apt install linux-image-6.8.0-31-generic linux-headers-6.8.0-31-generic
-   # Seleccionar en GRUB: Advanced options → 6.8.0-31-generic
-   sudo reboot
-   ```
-
-4. **DirectML en Windows** funciona out-of-the-box con `--use-directml`. Más lento que ROCm pero estable.
-
-5. **ZLUDA en Windows** (traduce CUDA→AMD) lo más rápido para AMD Windows si compila — requiere HIP SDK 5.7+.
-
-### Pasos post-reboot para completar SD.Next
-
-Después de confirmar que `hipGetDeviceCount > 0` con kernel 6.8:
 ```bash
-cd /home/kelsielinux/apps/sdnext
-source venv/bin/activate
-# Verificar GPU primero:
-python3 -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-# Lanzar SD.Next:
-HSA_OVERRIDE_GFX_VERSION=9.0.0 python launch.py --backend rocm --listen --port 7860
+# sd-cli
+build/bin/sd-cli \
+  -m models/checkpoints/PonyDiffusionV6XL.safetensors \
+  --backend vulkan0 --fa --vae-tiling \
+  -p "PROMPT" -n "NEGATIVE" \
+  -W 768 -H 768 --steps 20 --cfg-scale 7.0 \
+  --sampling-method dpm++2m --scheduler karras --clip-skip 2 \
+  -o output.png
+
+# sd-server (API en :7860)
+./launch.sh  # usa Pony por defecto
 ```
-Primer lanzamiento instala dependencias adicionales (~5-10 min). Descargar MeinaHentai primero para prueba rápida.
 
-### Métricas de referencia (Fumilinux Iris Xe, para comparar después)
+**Prompt format Pony (OBLIGATORIO):**
+- Positive: empezar con `score_9, score_8_up, score_7_up, source_anime, rating_explicit,` + prompt real
+- Negative: empezar con `score_1, score_2, score_3, source_furry,` + negative real
+- Sin estos score tags la calidad cae significativamente
 
-- SD 1.5 (CounterfeitV3 / MeinaHentai) 512x768 28 steps: **110-135 s por imagen** (OpenVINO compile cached)
-- Velocidad: ~0.19-0.28 it/s
-- SDXL: OOM kill consistente (no cabe en 24 GB RAM compartida)
+### MeinaHentai (SD 1.5) — fallback rápido
 
-En Torre 1 con RX 570 8GB VRAM dedicada, esperar:
-- SD 1.5 512x768: ~15-30 s
-- SDXL 1024x1024: ~60-90 s
-- Hires fix + detailer accesibles
+```bash
+./launch.sh models/checkpoints/MeinaHentai-baked-VAE-Q5_0.gguf
+# settings: 512×512, 20 steps, CFG 6, DPM++ 2M Karras, clip_skip 2
+```
+
+## Trampas confirmadas
+
+1. **ROCm HIP crash en kernel 6.17 — PERMANENTE.** HSA funciona, HIP segfault. No hay workaround. Solución: Vulkan.
+2. **Kernel 6.8 destruyó el equipo** → permanentemente descartado.
+3. **SDXL Q5_0 GGUF genera ruido puro.** La conversión `sd-cli -M convert --type q5_0` funciona para SD 1.5 (MeinaHentai) pero produce GGUF inservible para modelos SDXL. Usar safetensors fp16 directo.
+4. **PonyDiffusion: prediction mode.** Se autodetecta como eps-prediction desde el safetensors — correcto, NO forzar `--prediction v` (produce noise). El `--prediction v` solo genera ruido con este modelo.
+5. **VAE OOM a 1024×1024** incluso con `--vae-tiling`. Máximo confirmado: 832×1216 vertical o 768×768 cuadrado.
+6. **`--schedule` (incorrecto) → usar `--scheduler`** en sd-cli.
+7. **Anatomía POV "disembodied penis"** — SD 1.5 no entiende la física espacial. Genera el eje en dirección incorrecta siempre. Pony (SDXL) maneja mejor composiciones complejas.
+8. **Tras reboot del equipo, sd-server queda en estado Vulkan inválido** — proceso sigue vivo pero al llamar `/sdapi/v1/txt2img` devuelve `vk::Queue::submit: ErrorDeviceLost`. Solución: `kill <pid>` + `nohup ./launch.sh > /tmp/sdserver.log 2>&1 &`. Esperar ~8s a que cargue el modelo (6.5GB).
+9. **gen.sh original abría visor `eog` automático** — quitado 2026-05-27 a pedido del usuario. Output queda solo en `outputs/`.
+10. **Llama3.2:3b no genera prompts en Torre 1 cuando sd-server + Open WebUI + Firefox están activos** — RAM insuficiente (8GB total). Fallback: armar prompts manualmente o usar OpenAI/Groq/Gemini via Open WebUI.
+
+## Prompt NSFW probado — PonyDiffusion, composición sexual explícita
+
+```
+positive: score_9, score_8_up, score_7_up, source_anime, rating_explicit, (masterpiece), (best quality), 1girl, 1boy, mature female, long black hair, kneeling, looking up at viewer, from above, male pov, fellatio, oral, penis in mouth, penis from above, cum dripping, saliva, blush, detailed face, detailed eyes, indoors, soft lighting
+
+negative: score_1, score_2, score_3, source_furry, (worst quality), (low quality), deformed, malformed, bad anatomy, extra limbs, extra hands, extra fingers, fused fingers, blurry, watermark, signature, text, censored, jpeg artifacts
+
+settings: 768×768, 20 steps, CFG 7.0, DPM++ 2M Karras, clip_skip 2
+```
+
+## Modelos a considerar (no descargados)
+
+| Modelo | URL HuggingFace | Tamaño | Nota |
+|---|---|---|---|
+| `AnimagineXL 3.1` | `cagliostrolab/animagine-xl-3.1` | ~6.4 GB | SDXL anime limpio (no requiere score tags) |
+| `MeinaV10` | `Meina/MeinaMix` | 3.3 GB | SD 1.5 general, limpio |
+| `CounterfeitV3` | `gsdf/Counterfeit-V3.0` | 4 GB | SD 1.5, estilo suave |
