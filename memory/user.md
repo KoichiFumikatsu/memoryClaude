@@ -91,6 +91,8 @@ Cali · 2016 – 2021
 - IP LAN: 192.168.12.7, SSH puerto 22, usuario `kelsielinux` (trampa: NO es `kelsie`)
 - ROCm 6.4 instalado, RX 570 detectada, `HSA_OVERRIDE_GFX_VERSION=9.0.0` activo
 - Stack completo: Claude Code, Docker CE + n8n, Ollama + llama3.2:3b, Wine, Steam, Blender, etc.
+- Tailscale activo — Torre 1: 100.67.216.43, Fumilinux: 100.116.50.47
+- Escritorio remoto: GNOME Remote Desktop RDP puerto 3389, xfreerdp desde Fumilinux
 - Pendiente: rclone OAuth, n8n workflows, Vector venv
 
 **Torre 2:**

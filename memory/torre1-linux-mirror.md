@@ -5,12 +5,29 @@
 - OS: Ubuntu 24.04 LTS (instalado 2026-05-26)
 - Uso: AI generation local + gaming con Proton
 
-## Acceso SSH desde Fumilinux
-- IP: 192.168.12.7, puerto 22
+## Acceso remoto
+
+### SSH
+- IP LAN: 192.168.12.7, puerto 22
+- IP Tailscale: 100.67.216.43
 - Usuario principal: `kelsielinux` (NO es `kelsie` — trampa crítica)
 - Usuario root: también tiene acceso SSH con la misma clave
 - Clave: `~/.ssh/id_ed25519` de Fumilinux → autorizada en Torre 1
 - `kelsielinux` tiene sudo NOPASSWD
+
+### Tailscale (VPN)
+- Instalado en Torre 1 y Fumilinux (2026-05-26)
+- Cuenta: fumikatsu.koichi@gmail.com
+- Torre 1: 100.67.216.43 | Fumilinux: 100.116.50.47
+- Funciona desde cualquier red
+
+### Escritorio remoto (GNOME Remote Desktop + RDP)
+- Puerto: 3389, credenciales: kelsielinux / Fumi0926
+- Certificado TLS en `~/.local/share/gnome-remote-desktop/`
+- Comando: `xfreerdp /v:100.67.216.43:3389 /u:kelsielinux /p:Fumi0926 /cert:ignore /dynamic-resolution +clipboard`
+- Lanzador en Fumilinux: `~/.local/share/applications/torre1-rdp.desktop`
+- **TRAMPA:** AnyDesk no funciona como host en Wayland
+- **TRAMPA:** Remmina no conecta — usar xfreerdp directo
 
 **TRAMPA:** El usuario en Torre 1 es `kelsielinux`, no `kelsie`. Todos los paths son `/home/kelsielinux/`. Los servicios systemd y lanzadores .desktop fueron corregidos con sed al migrar.
 
