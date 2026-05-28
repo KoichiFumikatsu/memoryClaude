@@ -6,6 +6,8 @@
 
 **Estado actual Torre 1 (2026-05-27):** `stable-diffusion.cpp` compilado con backend Vulkan (RADV). ROCm/HIP descartado — crash irrecuperable en kernel 6.17. Stack activo: Vulkan + PonyDiffusion V6 XL safetensors fp16.
 
+**Hardware GPU (corregido 2026-05-28):** AMD Radeon **RX 570** (Ellesmere/Polaris 10), **4GB VRAM** — NO 8GB como se había anotado antes. Confirmado por `vulkaninfo` + `/sys/class/drm/card1/device/mem_info_vram_total = 4294967296 bytes`. Esto explica el techo de 832×1216 (con VAE decode no entra 1024×1024) y los ~8min/imagen (swap constante a RAM). Pony fp16 (6.5GB) corre por swapping transparente que hace sd.cpp con `--fa --vae-tiling`. **Implicación:** entrenamiento LoRA local imposible — ni siquiera SD 1.5 cabe con margen. Upgrade barato más impactante sería RTX 3060 12GB (~$200-250 usada): triplica VRAM, habilita entrenamiento, elimina swap.
+
 **Plan a futuro:** seguir pruebas de imagen → empezar generación de video (evaluar AnimateDiff, SVD, CogVideoX, LTX-Video).
 
 **Ruta actual:** `stable-diffusion.cpp` + Vulkan/RADV + PonyDiffusion V6 XL (SDXL). No usa ROCm ni HIP. GPU detectada como `RADV POLARIS10`, Vulkan 1.4.318.
