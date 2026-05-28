@@ -12,8 +12,22 @@
 - IP Tailscale: 100.67.216.43
 - Usuario principal: `kelsielinux` (NO es `kelsie` — trampa crítica)
 - Usuario root: también tiene acceso SSH con la misma clave
-- Clave: `~/.ssh/id_ed25519` de Fumilinux → **ROTA 2026-05-28** — clave fue regenerada en Fumilinux el 2026-05-07, Torre 1 aún tiene la clave vieja. Fix: desde Torre 1 físicamente ejecutar `echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHz5ABNXYXkMtKx6KvpNJhElQnDFHUdXnSudRlAykDL4 fumikatsu.koichi@gmail.com" >> ~/.ssh/authorized_keys`
+- Clave: `~/.ssh/id_ed25519` de Fumilinux → autorizada en Torre 1 (verificado 2026-05-28 — ambas claves coinciden, SSH funcional)
 - `kelsielinux` tiene sudo NOPASSWD
+
+**Comando exacto (Tailscale — funciona desde cualquier red):**
+```
+ssh -o ConnectTimeout=10 kelsielinux@100.67.216.43
+```
+**Alternativa LAN (misma red):**
+```
+ssh kelsielinux@192.168.12.7
+```
+**Trampas frecuentes:**
+- Usuario es `kelsielinux`, NO `kelsie` — da "Permission denied" sin error claro si usas el nombre incorrecto
+- La clave `~/.ssh/id_ed25519` debe existir en Fumilinux
+- Clave pública en Torre 1: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHz5ABNXYXkMtKx6KvpNJhElQnDFHUdXnSudRlAykDL4 fumikatsu.koichi@gmail.com`
+- Si falla con "Permission denied (publickey)": regenerar con `ssh-copy-id kelsielinux@100.67.216.43` (requiere acceso físico o contraseña temporal)
 
 ### Tailscale (VPN)
 - Instalado en Torre 1 y Fumilinux (2026-05-26)
