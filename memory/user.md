@@ -86,7 +86,7 @@ Cali · 2016 – 2021
 ## Hardware — Torres Windows
 
 **Torre 1 (principal para AI/GPU):**
-- GPU: AMD RX 570 8GB (Polaris, GFX8 / gfx803)
+- GPU: AMD RX 570 4GB (Polaris, GFX8 / gfx803) — confirmado por vulkaninfo (4294967296 bytes VRAM)
 - OS: Ubuntu 24.04 LTS — instalado y clonado desde Fumilinux el 2026-05-26
 - IP LAN: 192.168.12.7, SSH puerto 22, usuario `kelsielinux` (trampa: NO es `kelsie`)
 - ROCm 6.4 instalado, RX 570 detectada, `HSA_OVERRIDE_GFX_VERSION=9.0.0` activo
