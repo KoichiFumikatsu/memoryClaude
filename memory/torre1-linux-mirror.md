@@ -12,7 +12,7 @@
 - IP Tailscale: 100.67.216.43
 - Usuario principal: `kelsielinux` (NO es `kelsie` — trampa crítica)
 - Usuario root: también tiene acceso SSH con la misma clave
-- Clave: `~/.ssh/id_ed25519` de Fumilinux → autorizada en Torre 1
+- Clave: `~/.ssh/id_ed25519` de Fumilinux → **ROTA 2026-05-28** — clave fue regenerada en Fumilinux el 2026-05-07, Torre 1 aún tiene la clave vieja. Fix: desde Torre 1 físicamente ejecutar `echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHz5ABNXYXkMtKx6KvpNJhElQnDFHUdXnSudRlAykDL4 fumikatsu.koichi@gmail.com" >> ~/.ssh/authorized_keys`
 - `kelsielinux` tiene sudo NOPASSWD
 
 ### Tailscale (VPN)
@@ -22,10 +22,11 @@
 - Funciona desde cualquier red
 
 ### Escritorio remoto (GNOME Remote Desktop + RDP)
-- Puerto: 3389, credenciales: kelsielinux / Fumi0926
+- Puerto: **3390** (cambió de 3389 — 2026-05-28)
+- Credenciales: kelsielinux / Fumi0926
 - Certificado TLS en `~/.local/share/gnome-remote-desktop/`
-- Comando: `xfreerdp /v:100.67.216.43:3389 /u:kelsielinux /p:Fumi0926 /cert:ignore /dynamic-resolution +clipboard`
-- Lanzador en Fumilinux: `~/.local/share/applications/torre1-rdp.desktop`
+- Comando: `xfreerdp /v:100.67.216.43:3390 /u:kelsielinux /p:Fumi0926 /cert:ignore /dynamic-resolution +clipboard`
+- Lanzador en Fumilinux: `~/.local/share/applications/torre1-rdp.desktop` (actualizar puerto)
 - **TRAMPA:** AnyDesk no funciona como host en Wayland
 - **TRAMPA:** Remmina no conecta — usar xfreerdp directo
 
