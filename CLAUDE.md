@@ -34,7 +34,8 @@ Según el engine activo:
 ## AI Image / Video Generation
 
 Si el contexto involucra generación de imágenes o video AI (Stable Diffusion, Pony, SDXL, anime, AnimateDiff, SVD, instalación en Torre 1, `~/projects/ia-gen/`), leer:
-- [memory/ai-image-local.md](memory/ai-image-local.md) — Estado activo: sdcpp + Vulkan + PonyDiffusion V6 XL en Torre 1. Workspace en `~/projects/ia-gen/`. Open WebUI con OpenAI/Groq/Gemini pre-configurado. Aprendizajes: trampas Vulkan, OOM VAE, métricas, prompts Pony.
+- [memory/ai-image-local.md](memory/ai-image-local.md) — Estado activo: sdcpp + Vulkan + PonyDiffusion V6 XL en Torre Oficina. Workspace en `~/projects/ia-gen/`. Open WebUI con OpenAI/Groq/Gemini pre-configurado. Aprendizajes: trampas Vulkan, OOM VAE, métricas, prompts Pony.
+- [memory/hardware-3-torres.md](memory/hardware-3-torres.md) — inventario completo Oficina/Casa/AZC, plan swap CPU+RAM Casa↔Oficina, futuro upgrade GPU. Leer cuando se discuta hardware, upgrades, swaps o GPU.
 
 ## Torre 1 — Linux + Mirror
 
