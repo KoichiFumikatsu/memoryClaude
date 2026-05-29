@@ -94,6 +94,7 @@ build/bin/sd-cli \
 - Positive: empezar con `score_9, score_8_up, score_7_up, source_anime, rating_explicit,` + prompt real
 - Negative: empezar con `score_1, score_2, score_3, source_furry,` + negative real
 - Sin estos score tags la calidad cae significativamente
+- ⚠️ **NO usar `boring_sdxl_v1` en negative** — el 2026-05-29 se descubrió que produce PNG blanco determinista de 35507B con Pony en prompts complejos a 50+ steps. Archivo sigue en `/models/embeddings/` pero no referenciar.
 
 ### Illustrious XL v1.0 (SDXL) — configuración probada
 
