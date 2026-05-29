@@ -6,7 +6,9 @@
 
 **Estado actual Torre 1 (2026-05-27):** `stable-diffusion.cpp` compilado con backend Vulkan (RADV). ROCm/HIP descartado — crash irrecuperable en kernel 6.17. Stack activo: Vulkan + PonyDiffusion V6 XL safetensors fp16.
 
-**Hardware GPU (corregido 2026-05-28):** AMD Radeon **RX 570** (Ellesmere/Polaris 10), **4GB VRAM** — NO 8GB como se había anotado antes. Confirmado por `vulkaninfo` + `/sys/class/drm/card1/device/mem_info_vram_total = 4294967296 bytes`. Esto explica el techo de 832×1216 (con VAE decode no entra 1024×1024) y los ~8min/imagen (swap constante a RAM). Pony fp16 (6.5GB) corre por swapping transparente que hace sd.cpp con `--fa --vae-tiling`. **Implicación:** entrenamiento LoRA local imposible — ni siquiera SD 1.5 cabe con margen. Upgrade barato más impactante sería RTX 3060 12GB (~$200-250 usada): triplica VRAM, habilita entrenamiento, elimina swap.
+**Hardware GPU:** AMD Radeon **RX 570** (Ellesmere/Polaris 10), **4GB VRAM**. Confirmado por `vulkaninfo` + `mem_info_vram_total = 4294967296 bytes`. Esto explica el techo de 832×1216 (con VAE decode no entra 1024×1024). Pony fp16 (6.5GB) corre por swapping transparente que hace sd.cpp con `--fa --vae-tiling`. **VRAM 4GB sigue siendo el cuello para entrenamiento LoRA local.** Upgrade pendiente sería RTX 3060 12GB.
+
+**Hardware CPU/RAM (upgrade 2026-05-29):** Torre 1 ahora tiene **15GB RAM (antes 8) + 12 hilos CPU**. El upgrade resolvió un bug crítico donde Pony generaba PNGs blancos de 34KB a 832×1216 + 20-70 steps (memory pressure causaba fallo silencioso en VAE decode). Post-upgrade Pony y Illustrious funcionan correctamente. LoRAs runtime sigue limitado por VRAM 4GB; pre-merge con `merge_lora.py` ahora viable.
 
 **Plan a futuro:** seguir pruebas de imagen → empezar generación de video (evaluar AnimateDiff, SVD, CogVideoX, LTX-Video).
 
@@ -34,14 +36,27 @@
 - **Outputs:** `/home/kelsielinux/apps/sdcpp/outputs/`
 - **Modelos:** `/home/kelsielinux/apps/sdcpp/models/checkpoints/`
 
-## Modelos instalados
+## Modelos instalados (post-cleanup 2026-05-29)
 
 | Archivo | Tamaño | Estado | Uso |
 |---|---|---|---|
-| `PonyDiffusionV6XL.safetensors` | 6.5 GB | **ACTIVO — modelo principal** | SDXL, alta calidad, NSFW explícito |
-| `PonyDiffusionV6XL-Q5_0.gguf` | 2.9 GB | **ROTO — genera ruido** | Descartado |
-| `MeinaHentai-baked-VAE-Q5_0.gguf` | 1.6 GB | Funcional, calidad menor | SD 1.5 fallback rápido |
-| `MeinaHentai-baked-VAE.safetensors` | 2.0 GB | Original SD 1.5 | Puede borrarse |
+| `PonyDiffusionV6XL.safetensors` | 6.5 GB | ACTIVO | SDXL, alta calidad, NSFW explícito |
+| `Illustrious-XL-v1.0.safetensors` | 6.5 GB | ACTIVO | SDXL, anime mainstream, Danbooru tags |
+
+**⚠️ Modelos REMOVIDOS el 2026-05-29 — NO descargar de nuevo:**
+- `PonyDiffusionV6XL-Q5_0.gguf` (2.9GB) — GGUF Q5_0 en SDXL = ruido puro con sd.cpp
+- `MeinaHentai-baked-VAE-Q5_0.gguf` (1.6GB) — mismo problema GGUF en SDXL
+- `MeinaHentai-baked-VAE.safetensors` (2.0GB) — fallback SD 1.5 sin uso real
+
+## LoRAs disponibles (en `~/apps/sdcpp/models/loras/`)
+
+| LoRA | Tamaño | Propósito |
+|---|---|---|
+| `perfect_hands_v2.safetensors` | 436M | Manos/dedos |
+| `sdxl_detail.safetensors` | 163M | Detalles finos |
+| `smooth_anime_style_xl.safetensors` | 218M | Estilo anime suave |
+
+Aplicar con sintaxis `<lora:nombre:peso>` en prompt (sd-server ya tiene `--lora-model-dir` configurado). Pesos sugeridos: 0.7 / 0.4 / 0.3.
 
 ## Métricas reales medidas (2026-05-27)
 
@@ -80,25 +95,35 @@ build/bin/sd-cli \
 - Negative: empezar con `score_1, score_2, score_3, source_furry,` + negative real
 - Sin estos score tags la calidad cae significativamente
 
-### MeinaHentai (SD 1.5) — fallback rápido
+### Illustrious XL v1.0 (SDXL) — configuración probada
 
 ```bash
-./launch.sh models/checkpoints/MeinaHentai-baked-VAE-Q5_0.gguf
-# settings: 512×512, 20 steps, CFG 6, DPM++ 2M Karras, clip_skip 2
+# Cambiar modelo
+~/projects/ia-gen/scripts/switch-model.sh illustrious
+
+# Prompt format Danbooru puro (sin score tags)
+# Positive: (masterpiece:1.2), (best quality:1.2), highly detailed, [personaje], [contenido], anime style, 2d
+# Negative: (worst quality:1.4), (low quality:1.4), deformed, ..., western style
+
+# Tags multipalabra con underscore: cum_in_mouth, sleep_sex, looking_at_viewer
 ```
+
+**Nota Illustrious warmup:** primera generación tras switch tarda ~33 min. Las siguientes ~13 min warm.
 
 ## Trampas confirmadas
 
-1. **ROCm HIP crash en kernel 6.17 — PERMANENTE.** HSA funciona, HIP segfault. No hay workaround. Solución: Vulkan.
-2. **Kernel 6.8 destruyó el equipo** → permanentemente descartado.
-3. **SDXL Q5_0 GGUF genera ruido puro.** La conversión `sd-cli -M convert --type q5_0` funciona para SD 1.5 (MeinaHentai) pero produce GGUF inservible para modelos SDXL. Usar safetensors fp16 directo.
-4. **PonyDiffusion: prediction mode.** Se autodetecta como eps-prediction desde el safetensors — correcto, NO forzar `--prediction v` (produce noise). El `--prediction v` solo genera ruido con este modelo.
-5. **VAE OOM a 1024×1024** incluso con `--vae-tiling`. Máximo confirmado: 832×1216 vertical o 768×768 cuadrado.
-6. **`--schedule` (incorrecto) → usar `--scheduler`** en sd-cli.
-7. **Anatomía POV "disembodied penis"** — SD 1.5 no entiende la física espacial. Genera el eje en dirección incorrecta siempre. Pony (SDXL) maneja mejor composiciones complejas.
-8. **Tras reboot del equipo, sd-server queda en estado Vulkan inválido** — proceso sigue vivo pero al llamar `/sdapi/v1/txt2img` devuelve `vk::Queue::submit: ErrorDeviceLost`. Solución: `kill <pid>` + `nohup ./launch.sh > /tmp/sdserver.log 2>&1 &`. Esperar ~8s a que cargue el modelo (6.5GB).
-9. **gen.sh original abría visor `eog` automático** — quitado 2026-05-27 a pedido del usuario. Output queda solo en `outputs/`.
-10. **Llama3.2:3b no genera prompts en Torre 1 cuando sd-server + Open WebUI + Firefox están activos** — RAM insuficiente (8GB total). Fallback: armar prompts manualmente o usar OpenAI/Groq/Gemini via Open WebUI.
+1. **🔴 Múltiples sd-server saturan VRAM.** Si hay 2 procesos (pasaba con `sdcpp.service Restart=on-failure` + `pkill -9`), ambos cargan Pony 6.8GB en VRAM 4GB → saturación y requests cuelgan silenciosos. **Service ahora `disabled` desde 2026-05-29.** Verificar `pgrep -c sd-server` = 1 antes de cada batch.
+2. **🔴 PNG de ~34KB = imagen blanca / no guardada.** Era el síntoma con 8GB RAM pre-upgrade: VAE decode fallaba silenciosamente sin escribir error. `gen.sh` reescrito el 2026-05-29 ahora avisa con WARN si PNG < 50KB y aborta con exit≠0 si no se guardó.
+3. **🔴 Error silencioso en gen.sh pre-fix:** `curl` sin `--max-time`, sin chequeo de HTTP status, sin chequeo de response JSON. Si sd-server colgaba o devolvía error, gen.sh seguía y reportaba "Sync OK" tomando una imagen vieja del chain anterior con `ls -t | head -1`. Fix aplicado 2026-05-29.
+4. **ROCm HIP crash en kernel 6.17 — PERMANENTE.** Solución: Vulkan.
+5. **Kernel 6.8 destruyó el equipo** → permanentemente descartado.
+6. **SDXL Q5_0 GGUF genera ruido puro.** Solo safetensors fp16. GGUFs ya borrados.
+7. **PonyDiffusion: prediction mode** se autodetecta eps. NO forzar `--prediction v`.
+8. **VAE OOM a 1024×1024** incluso con `--vae-tiling`. Máximo: 832×1216 vertical o 768×768 cuadrado.
+9. **`--schedule` (incorrecto) → usar `--scheduler`** en sd-cli.
+10. **Tras reboot, sd-server queda en estado Vulkan inválido** — `ErrorDeviceLost`. Kill + relaunch.
+11. **gen.sh original abría visor `eog` automático** — quitado 2026-05-27.
+12. **(OBSOLETO post-upgrade) Llama3.2:3b no cargaba en Torre 1** con sd-server + Open WebUI + Firefox activos por RAM 8GB. Ahora con 15GB sí carga.
 
 ## Prompt NSFW probado — PonyDiffusion, composición sexual explícita
 
