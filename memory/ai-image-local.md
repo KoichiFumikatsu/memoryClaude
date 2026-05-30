@@ -36,17 +36,20 @@
 - **Outputs:** `/home/kelsielinux/apps/sdcpp/outputs/`
 - **Modelos:** `/home/kelsielinux/apps/sdcpp/models/checkpoints/`
 
-## Modelos instalados (post-cleanup 2026-05-29)
+## Modelos instalados (stack reconstruido 2026-05-30)
 
-| Archivo | Tamaño | Estado | Uso |
+| Archivo | Tamaño | Flag | Especialidad |
 |---|---|---|---|
-| `PonyDiffusionV6XL.safetensors` | 6.5 GB | ACTIVO | SDXL, alta calidad, NSFW explícito |
-| `Illustrious-XL-v1.0.safetensors` | 6.5 GB | ACTIVO | SDXL, anime mainstream, Danbooru tags |
+| `NoobAI-XL-v1.1.safetensors` | 6.7 GB | `noobai` | Likeness anime + NSFW Danbooru reforzado (fork Illustrious) |
+| `animagine-xl-4.0-opt.safetensors` | 6.5 GB | `animagine` | Anime SFW puro refinado |
+| `waiNSFWIllustrious_v14.safetensors` | 6.5 GB | `wai` | Mix NSFW masivo (Pony+Illustrious blend) |
+| `ponyRealism_v22MainVAE.safetensors` | 6.7 GB | `ponyrealism` | Pony con anatomía mejorada |
 
-**⚠️ Modelos REMOVIDOS el 2026-05-29 — NO descargar de nuevo:**
-- `PonyDiffusionV6XL-Q5_0.gguf` (2.9GB) — GGUF Q5_0 en SDXL = ruido puro con sd.cpp
-- `MeinaHentai-baked-VAE-Q5_0.gguf` (1.6GB) — mismo problema GGUF en SDXL
-- `MeinaHentai-baked-VAE.safetensors` (2.0GB) — fallback SD 1.5 sin uso real
+**⚠️ Modelos REMOVIDOS — NO descargar de nuevo:**
+- **2026-05-30**: `PonyDiffusionV6XL.safetensors` e `Illustrious-XL-v1.0.safetensors` — reemplazados por los 4 forks superiores arriba
+- **2026-05-29**: `PonyDiffusionV6XL-Q5_0.gguf` y `MeinaHentai-baked-VAE-Q5_0.gguf` — GGUF Q5_0 en SDXL = ruido puro con sd.cpp
+- **2026-05-29**: `MeinaHentai-baked-VAE.safetensors` — fallback SD 1.5 sin uso
+- **2026-05-29**: `boring_sdxl_v1.safetensors` — producía PNG blanco determinista con Pony en prompts complejos
 
 ## LoRAs disponibles (en `~/apps/sdcpp/models/loras/`)
 
