@@ -23,11 +23,13 @@
 
 | Caso | Modelo |
 |---|---|
-| Personaje anime mainstream SFW | `animagine` o `noobai` |
-| Personaje anime mainstream NSFW | `noobai` o `wai` |
-| Composición sexual explícita | `wai` |
+| SFW + likeness anime + escenario detallado | **`wai`** o `noobai` (empatados; chain comparativo Marine kitchen lo confirmó) |
+| SFW estilo manga saturado / colores vivos | `animagine` |
+| NSFW masivo (sleep_sex, fellatio, harassment) | **`wai`** líder, `noobai` alternativa |
 | Semi-realismo / originales | `ponyrealism` |
 | EVITAR para personajes anime específicos | `ponyrealism` |
+
+**Hallazgo del chain comparativo 2026-05-30 (Marine cocinando seed 7777):** WAI **también es excelente SFW** además de NSFW (originalmente subestimado como solo-NSFW). Empata con NoobAI en likeness y supera en detalle de escenario.
 
 ## Cambio de modelo
 
@@ -105,6 +107,7 @@ Las imágenes aparecen en `~/Pictures/ia-gen/CHAR/` en Fumilinux por --sync auto
 
 ## Tests de validación realizados (2026-05-30)
 
+### Individuales
 | Test | Modelo | Likeness | Composición |
 |---|---|---|---|
 | Marine pirata SFW | animagine | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
@@ -113,3 +116,11 @@ Las imágenes aparecen en `~/Pictures/ia-gen/CHAR/` en Fumilinux por --sync auto
 | Zelda sleep NSFW | wai | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
 | Frieren biblioteca SFW | noobai | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
 | Power CSM SFW | ponyrealism | ⭐ | ⭐⭐⭐⭐ |
+
+### Chain comparativo Marine kitchen SFW (seed 7777, 3 modelos)
+| Modelo | Likeness | Composición | Detalle escenario |
+|---|---|---|---|
+| `noobai` | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| `animagine` | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| `wai` | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| `ponyrealism` | (cancelado por usuario, descartado para anime) |
