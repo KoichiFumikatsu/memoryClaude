@@ -47,7 +47,49 @@ type: project
 `/home/azcweb/conf/web/doors.azc.com.co/nginx.ssl.conf` proxy a:
 - `location /` → `https://127.0.0.1:8543` (uhppoted-httpd panel)
 - `location /door-opener/` → `https://127.0.0.1:8445/` (microservicio Python, slash final = strip prefix)
+- `location /schedules/api/` → `https://127.0.0.1:8446/api/` (microservicio schedule-manager)
+- `location /schedules/` → `alias /home/azcweb/web/doors.azc.com.co/public_html/schedules/` (UI estática)
 - `location = /robots.txt` → archivo físico
+
+## Schedule manager (time profiles UI) — agregado 2026-05-30
+
+Microservicio Python `/usr/local/bin/schedule-manager` escuchando `127.0.0.1:8446` (HTTPS con cert uhppoted), systemd unit `schedule-manager.service`. Wrapping `uhppote-cli` para CRUD time profiles + permisos de cards.
+
+**Endpoints REST (vía `https://doors.azc.com.co/schedules/api/*`):**
+- `GET /profiles` · `GET /profile/<id>` · `PUT /profile/<id>` · `DELETE /profile/<id>`
+- `GET /card/<n>` · `PUT /card/<n>` · `GET /cards-list` · `GET /doors`
+- `POST /bulk-assign` (cards, door, profile)
+
+**UI:** `https://doors.azc.com.co/schedules/index.html` — estructura idéntica al panel (header, nav, CSS uhppoted.css), 3 sub-tabs: Profiles / Card individual / Asignación masiva. Tab "HORARIOS" inyectado por custom.js en el nav del panel.
+
+**Parsing:** `get-time-profiles` retorna tabla (id, from, to, Mon-Sun Y/N, 3 pares HH:mm, linked). Mi parser lo convierte a JSON `{id, from, to, weekdays[], segments[[start,end]...], linked}`.
+
+**Persistencia:** profiles viven SOLO en el controlador, NO en cards.json. Si alguien hace ACL Sync desde el panel uhppoted, **borra los profiles asignados a cards** porque cards.json no tiene field `profile`. Workaround: NO usar Sync ACL después de configurar profiles, gestionar TODO via la UI/CLI.
+
+**Asignación card+profile:** `put-card 222451671 <card> <from> <to> "1:2,2,3,4"` — sintaxis door:profile, NO documentada pero funcional. Doors sin profile id van como Y (24/7).
+
+## SSH público al server (habilitado 2026-05-30)
+
+Port forward Omada `22 ext → 192.168.12.25:22` + iptables rule via `v-add-firewall-rule ACCEPT 0.0.0.0/0 22 TCP SSH_WAN`. Acceso desde cualquier red con clave SSH. Fail2ban-SSH activo (banea brute-force).
+
+```bash
+ssh root@186.145.239.174       # acceso público
+ssh root@192.168.12.25         # acceso LAN local (sigue funcionando)
+```
+
+## custom.js — patches agregados 2026-05-30
+
+`/opt/uhppoted-httpd-custom/httpd/html/javascript/custom.js` extendido con:
+1. `_customSortDescByTimestamp(tbody)` — ordena events/logs descendente por `input.timestamp` value. Skip si ya está ordenado (evita mutaciones inútiles).
+2. `_customWatchAndSort(selector)` — MutationObserver con `suppressing` flag para evitar auto-trigger loop. WeakSet `_customWatchedTbodies` evita duplicar observers.
+3. `_customInjectScheduleTab()` — agrega `<li class="custom-schedules"><a href="/schedules/">HORARIOS</a></li>` al `<nav><ul>`. Idempotente.
+4. `_customWatchNav()` — re-inyecta tab si el nav se reconstruye.
+
+**custom.js solo se carga en páginas que tienen `{{template "custom.js" .}}` dentro de `<script type="module">`.** El template SOLO contiene imports + window assignments — NO incluye las tags `<script>`, tiene que ir DENTRO del module existente. Páginas que originalmente NO lo cargaban: overview, controllers, logs, users — se agregó manualmente.
+
+## Bug conocido pendiente (2026-05-31)
+
+`https://doors.azc.com.co/sys/controllers.html` (System) se renderiza como **HTML texto plano** en el navegador del usuario, no como página. El HTML servido por el server es válido (verificado con curl, content-type correcto), idéntico estructuralmente a doors.html que SÍ renderiza. **Sin diagnóstico definitivo.** Las otras páginas que también modifiqué (overview, logs, users) — pendiente confirmar si funcionan. Probables causas a investigar: cache stale específica de Chrome, service worker fantasma, BFCache, o algún byte unicode invisible en el archivo (md5 idéntico al `.bak.customjs` modificado).
 
 JS custom modificado: `DOOR_OPENER_BASE = "/door-opener"` (path relativo, mismo origin, mismo cert LE). El JS original llamaba `https://${window.location.hostname}:8445` que fallaba externamente.
 
@@ -63,13 +105,19 @@ JS custom modificado: `DOOR_OPENER_BASE = "/door-opener"` (path relativo, mismo 
 - `/opt/uhppoted-httpd-custom/` — UI custom branch (HTML/JS/CSS override)
 - `/etc/systemd/system/uhppoted-{httpd,rest}.service`, `door-opener.service`
 
-## Hestia firewall (reglas LAN)
+## Hestia firewall
 
+LAN:
+- `192.168.12.0/22 22 TCP` (LAN_SSH)
 - `192.168.12.0/22 8543 TCP` (UHPPOTED_HTTPS)
 - `192.168.12.0/22 8580 TCP` (UHPPOTED_HTTP)
 - `192.168.12.0/22 8444 TCP` (UHPPOTED_REST)
 - `192.168.12.0/22 8445 TCP` (DOOR_OPENER)
 - `192.168.15.10 60001 UDP` (UHPPOTED_LISTEN para events del controlador)
+
+WAN:
+- `0.0.0.0/0 22 TCP` (SSH_WAN) — protegido por fail2ban-SSH
+- `0.0.0.0/0 80,443 TCP` (web público para nginx, Hestia default)
 
 ## DNS público
 
@@ -82,9 +130,11 @@ JS custom modificado: `DOOR_OPENER_BASE = "/door-opener"` (path relativo, mismo 
 
 ## Pendientes (próximas sesiones)
 
-- **Accesos por horario** (time profiles): los UT0311-L0x soportan slots horarios nativos. Definir grupos con horario (ej. Empleados 7am-7pm L-V). Falta diseño + implementación en panel.
+- **Bug System (controllers.html) renderiza como texto plano** en navegador del usuario — sin diagnóstico. Investigar service worker / BFCache / cache de Chrome.
+- **Time profiles reales:** definir los 3-5 horarios concretos por rol (Empleados, Directivos, Servicios Generales, etc.) y aplicar masivamente con la UI Schedules.
 - **Cambiar password admin de uhppoted** (sigue en default `admin / uhppoted`)
 - **NAT hairpin / DNS interno**: clientes en LAN de la oficina del server tienen problema accediendo `doors.azc.com.co` por NAT loopback. Workaround temporal: `/etc/hosts → 192.168.12.25 doors.azc.com.co` por máquina. Fix definitivo: habilitar hairpin en Omada, o configurar zona DNS local en BIND9 del server (named ya corre).
+- **Auth en `/schedules/api/`**: actualmente sin auth — cualquiera con acceso al dominio puede modificar profiles. Agregar basic auth o validar cookie de uhppoted-httpd.
 - Configurar uhppoted-tunnel (binario instalado pero sin uso)
 - Vaciar cola exim del server azc (4228 mensajes frozen, no urgente)
 
