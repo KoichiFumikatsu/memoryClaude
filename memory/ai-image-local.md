@@ -23,13 +23,22 @@
 
 | Caso | Modelo |
 |---|---|
-| SFW + likeness anime + escenario detallado | **`wai`** o `noobai` (empatados; chain comparativo Marine kitchen lo confirmó) |
+| SFW + likeness anime + escenario detallado | **`wai`** o `noobai` (empatados) |
 | SFW estilo manga saturado / colores vivos | `animagine` |
-| NSFW masivo (sleep_sex, fellatio, harassment) | **`wai`** líder, `noobai` alternativa |
-| Semi-realismo / originales | `ponyrealism` |
+| **Manga PÁGINA real multi-panel + speech bubbles** | **`noobai`** (interpreta literal) |
+| **Manga ilustración single panel pulida** | **`wai`** |
+| NSFW masivo (sleep_sex, fellatio, harassment) | **`wai`** líder |
+| **NSFW + manga B&N simultáneo** | **`wai`** (validado Yvette sleep manga) |
+| **Batches NSFW largos multi-personaje** | **`wai`** (validado 20 imgs Hololive) |
+| Cellshading 3D Genshin/HSR/BOTW | **pendiente** (chain Xinyan corriendo al cierre 2026-05-31) |
+| Semi-realismo / personajes originales | `ponyrealism` |
 | EVITAR para personajes anime específicos | `ponyrealism` |
 
-**Hallazgo del chain comparativo 2026-05-30 (Marine cocinando seed 7777):** WAI **también es excelente SFW** además de NSFW (originalmente subestimado como solo-NSFW). Empata con NoobAI en likeness y supera en detalle de escenario.
+**Hallazgos clave 2026-05-30/31:**
+- WAI cubre TODO: SFW + NSFW + manga + likeness. El más completo del stack.
+- NoobAI interpreta `manga style` literal → genera **PÁGINA real con viñetas multi-panel + speech bubbles + screentones**. Único para esto.
+- Animagine se queda en single panel saturado / cartoon. Útil para estilo "manga colorido".
+- Pony Realism descartado para personajes anime específicos (likeness pobre).
 
 ## Cambio de modelo
 
@@ -124,3 +133,19 @@ Las imágenes aparecen en `~/Pictures/ia-gen/CHAR/` en Fumilinux por --sync auto
 | `animagine` | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
 | `wai` | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
 | `ponyrealism` | (cancelado por usuario, descartado para anime) |
+
+### Chain manga humor SFW (Marine viñeta, seed 9999, 3 modelos)
+| Modelo | Interpretación | Estilo manga |
+|---|---|---|
+| `noobai` | **PÁGINA REAL multi-panel (3 viñetas)** | ⭐⭐⭐⭐⭐ |
+| `animagine` | Single panel grande | ⭐⭐⭐⭐ |
+| `wai` | Single panel ilustración pulida | ⭐⭐⭐⭐⭐ |
+
+### Yvette sleep manga NSFW (seed 5454, solo WAI)
+WAI demostró **3 capacidades simultáneas en una imagen:** likeness Yvette en B&N + composición NSFW (sleep+oral+cum) + estilo manga single panel.
+
+### Batch nocturno Hololive NSFW (20 imgs, solo WAI, 2026-05-30)
+4 personajes (Calliope, Gura, Kiara, Ina) × 5 composiciones (2 sleep + 2 blowjob + 1 manga bukkake) = 20 imgs generadas en ~6.7h sin alertas. Validado para batches largos.
+
+### Chain Xinyan cellshading 3D Genshin (pendiente al cierre 2026-05-31)
+SFW Xinyan+HuTao concert Liyue + NSFW Xinyan sleep cum × 3 modelos = 6 imgs. Tags clave: `(cel shading:1.4), (gradient cel shading:1.2), (anime 3d:1.2), (genshin impact style:1.3)`. Negative: `flat color anime, traditional 2d anime, hand-drawn`. Outputs en `~/Pictures/ia-gen/xinyan-genshin-compare/`.
