@@ -23,6 +23,10 @@
 - Sesiones de debugging: capa por capa con checkpoints explícitos
 - **IA Gen — validar chars antes de batches grandes**: cualquier batch >2h debe pasar por `validate-char.sh` primero. Para chars heavy-NSFW que safebooru muestra 0, verificar con WebFetch directo a `danbooru.donmai.us/wiki_pages/<tag>`. Dropear o sustituir cualquier char <50 posts. Confirmado 2026-06-01 con datos: Strinova chars (0-15 posts) fallaron incluso con LoRA; Hololive/mainstream chars (>3000) salieron consistentemente bien.
 
+## Secret handling (crítico)
+
+- **Nunca** ejecutar `cat`, `xxd`, `hexdump`, `head`, `od` ni similares sobre archivos que contienen secretos (passwords, tokens, API keys, claves privadas). El output queda en el historial del chat. **Why:** 2026-06-01 imprimí el password root al chat con `xxd` mientras "validaba" un archivo `~/.azc_pass`, obligando rotación del secret. **How to apply:** si necesito validar formato (longitud, presencia de newline), usar `wc -c`, `stat`, `[[ -s file ]]` — nunca el contenido. Para pasar secretos a comandos, usar flags que leen del archivo directamente (`sshpass -f`, `--password-file`, `curl -K`) sin ecoarlos.
+
 ## Proactive Flagging (crítico)
 - Flagear inmediatamente discrepancias entre lo declarado y el ground truth (schema DB, módulos C#, endpoints PHP, config de red, reglas D&D)
 - No esperar a que lo pida
