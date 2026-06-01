@@ -232,3 +232,25 @@ Dashboard.py fue killed por error en mi dedup inicial esta sesión (12:05:41 →
 ### Video gen + Sync cel — aplazados
 - Video gen (Wan 2.1/2.2 + LTX-2.3 en sd-cli `-M vid_gen`): plan híbrido investigado, costuras inevitables anime↔Wan local, **APLAZADO**. Plan completo en `/home/kelsie/.claude/plans/mientras-se-hace-eso-ethereal-comet.md`.
 - Sync auto cel Android Tailscale (Syncthing en Fumilinux): plan investigado, **APLAZADO**.
+
+## Sesión 2026-06-01 tarde — validación, batch reducido, dashboard mejorado, lección comp1
+
+### Validación mainstream RESULTADO (2026-06-01 16:00)
+- ✓ hikigaya_komachi (297), ✓ mori_calliope (~3800), ~ herta_(honkai:_star_rail) (3345 — salió Herta regular no Madam Herta, usuario lo acepta)
+- ✗ futaba_rio (268), ✗ furuhashi_fumino (85) — genéricas
+- Caveat val: prompt pedía 2boys pero salió 1. Reforzado en batch.
+
+### Batch mainstream relanzado (PID 22543, 2026-06-01 17:14)
+3 chars × 6 comps × 3 seeds = **54 imgs ≈ 18h** (ETA ~11:14 2026-06-02). Script `~/projects/ia-gen/chains/chain_mainstream-batch-20260601.sh`. Log `/tmp/chain_mainstream-batch-20260601-1714.log`.
+
+### Lección crítica WAI/SDXL — composition locks expulsan sujetos
+2026-06-01: añadí `(single table:1.3), (one table only:1.2)` al positivo de comp1 (intentando arreglar "mesa duplicada" de herta) + `nested furniture, table under table` al negativo. Resultado: imagen SFW completa — sólo niña durmiendo, sin hombres ni cum. Mismo prompt sin esos tags (val test) produjo NSFW con bukkake.
+
+**Regla**: tags exclusivos (`single X`, `one X only`, `just one Y`) con peso >1.2 expulsan otros elementos del scenario aunque estén pedidos en el resto del prompt. Pesos seguros para refuerzo: 1.3-1.4 máx. >1.5 degrada. Problemas puntuales (duplicación en 1 seed) tratar caso por caso, no cross-char.
+
+### Dashboard `dashboard.py` mejorado
+- HTTP action server background thread en `127.0.0.1:8769` (8765-8767 ocupados por tlgames qa_server/pipeline_server — verificar `ss -tlnp | grep 87` antes de cambiar)
+- POST `/api/delete` borra local + Torre 1 (sin el segundo, rsync la re-baja, no usa --delete)
+- POST `/api/favorite` toggle en `~/Pictures/ia-gen/_favoritos/<grupo>/<file>`. Sección Favoritos arriba.
+- Sort dropdown global (newest/oldest/name/seed asc-desc) + view-mode toggle (Por carpeta / Todas juntas). Persistencia localStorage. Sort cliente sobre data-attributes.
+- Cap de 20 imgs por carpeta eliminado.
