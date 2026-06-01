@@ -21,6 +21,7 @@
 - Outputs para el gerente general: HTML/PDF/PNG con diseño y branding (no texto plano)
 - Outputs para el equipo técnico: markdown estructurado, tablas, bloques de código, comandos CLI
 - Sesiones de debugging: capa por capa con checkpoints explícitos
+- **IA Gen — validar chars antes de batches grandes**: cualquier batch >2h debe pasar por `validate-char.sh` primero. Para chars heavy-NSFW que safebooru muestra 0, verificar con WebFetch directo a `danbooru.donmai.us/wiki_pages/<tag>`. Dropear o sustituir cualquier char <50 posts. Confirmado 2026-06-01 con datos: Strinova chars (0-15 posts) fallaron incluso con LoRA; Hololive/mainstream chars (>3000) salieron consistentemente bien.
 
 ## Proactive Flagging (crítico)
 - Flagear inmediatamente discrepancias entre lo declarado y el ground truth (schema DB, módulos C#, endpoints PHP, config de red, reglas D&D)
