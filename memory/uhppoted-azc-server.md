@@ -174,8 +174,14 @@ WAN:
 
 **Relay = mini PC Windows de Tequendama** (el que corría el N3000, always-on, en 192.168.14.x).
 
+**TÚNEL FUNCIONANDO end-to-end (2026-06-02):** los 4 controladores responden `get-device` desde el server central por el túnel. Detalles confirmados: 225088590=192.168.14.125 /22, 223205300=192.168.14.13 /24, 423150802=192.168.14.150 /24, 425036574=192.168.14.12 /24. **Todos con gateway 192.168.12.1** → por eso los /24 igual responden al relay (192.168.12.209, fuera de su /24): la respuesta sale por el gateway y vuelve dentro del /22. Normalizar máscaras a /22 es opcional, no bloqueante.
+
+Comando de test (server): `uhppote-cli --bind 192.168.12.25:0 --broadcast 192.168.12.25:60010 --timeout 8s get-device <SN>`.
+
 **Lado server (azc) — YA montado:**
-- Service `uhppoted-tunnel-tequendama.service`: `--in udp/listen:0.0.0.0:60000 --out tls/server:0.0.0.0:60443 --ca-cert/cert/key + --client-auth`. Escuchando TLS 60443 + UDP 60000. **Release v0.9.0** (el binario se auto-reporta como `v0.8.12` al correr `version` — string embebido atrasado; no existe release v0.8.12, los tags van hasta v0.9.0). Ambos extremos del túnel deben usar el MISMO release (v0.9.0).
+- Service `uhppoted-tunnel-tequendama.service`: `--in udp/listen:192.168.12.25:60010 --out tls/server:0.0.0.0:60443 --ca-cert/cert/key + --client-auth`. **El listen UDP debe ser puerto dedicado `192.168.12.25:60010`, NO `0.0.0.0:60000`** — con 0.0.0.0:60000 captura el broadcast/discovery del propio uhppoted del server (a 192.168.15.255:60000, el server también es /22) y lo reenvía al relay → flood + rate-limit que ahoga las respuestas. Puerto dedicado lo aísla.
+- **Release v0.9.0** (el binario se auto-reporta como `v0.8.12` al correr `version` — string embebido atrasado; no existe release v0.8.12, los tags van hasta v0.9.0). Ambos extremos del túnel deben usar el MISMO release (v0.9.0).
+- **Relay Windows:** `--out udp/broadcast:255.255.255.255:60000` (broadcast limitado, independiente de máscara — un /22 hace que 192.168.14.255 NO sea broadcast válido y el paquete ni sale). Mini PC relay = 192.168.12.209 (NO .14.x), LAN Tequendama es 192.168.12.0/22.
 - Certs mTLS en `/etc/uhppoted/tunnel/` (ca, server, client; SAN del server = doors.azc.com.co + 186.145.239.174 + 192.168.12.25; válidos 10 años).
 - Firewall Hestia: `ACCEPT 0.0.0.0/0 60443 TCP` (TUNNEL_TEQ, regla 19).
 - **Port-forward 60443/TCP → 192.168.12.25 ya abierto en Omada Palmetto** (el del server Mail+Puertas).
