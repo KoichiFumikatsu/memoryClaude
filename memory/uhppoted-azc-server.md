@@ -184,7 +184,16 @@ Comando de test (server): `uhppote-cli --bind 192.168.12.25:0 --broadcast 192.16
 - **Relay Windows:** `--out udp/broadcast:255.255.255.255:60000` (broadcast limitado, independiente de máscara — un /22 hace que 192.168.14.255 NO sea broadcast válido y el paquete ni sale). Mini PC relay = 192.168.12.209 (NO .14.x), LAN Tequendama es 192.168.12.0/22.
 - **Rate limit del túnel (crítico para bulk get-cards/get-acl/load-acl):** default 1 req/s burst 120 ahoga las operaciones masivas. Subido a **10/600**. **NO funciona como key top-level del TOML** — debe ir dentro de una **sección nombrada** referenciada con `--config archivo.toml#seccion`. Server usa `/etc/uhppoted/tunnel/tunnel.toml` sección `[tequendama]` con in/out/certs/client-auth/console/udp-timeout/rate-limit/rate-limit-burst, e invoca `--config .../tunnel.toml#tequendama` (el unit ya NO usa flags CLI sueltos). El relay Windows debe tener su PROPIO TOML con rate-limit 10/600 (cada extremo limita por separado; el cuello de botella es el menor). `--udp-timeout 5s` por la latencia del túnel.
 
-**Reconciliación de tarjetas ANTES de publicar a Tequendama (load-acl BORRA las no listadas):** cosechar el ACL actual de las 5 placas (get-acl) → clasificar cada card (solo Palmetto / solo Tequendama-X / en varias) con su acceso por puerta → importar a `cards.json` como superconjunto con grupos que reproduzcan el acceso actual → primer publish da `updated:0 deleted:0` (no quita acceso). Recién ahí gestión central. Controladores en conf con `.address=192.168.12.25:60010`. get-cards format: `<card> <from> <to> Y N N N`.
+**Reconciliación de tarjetas ANTES de publicar a Tequendama (load-acl BORRA las no listadas):** cosechar el ACL actual de las 5 placas (get-acl) → clasificar cada card (solo Palmetto / solo Tequendama-X / en varias) con su acceso por puerta → importar a `cards.json` como superconjunto con grupos que reproduzcan el acceso actual → primer publish da `updated:0 deleted:0` (no quita acceso). Recién ahí gestión central. Controladores en conf con `.address=192.168.12.25:60010`. get-cards format: `<card> <from> <to> Y N N N [PIN]`.
+
+**Reliability bulk read sobre túnel:** requiere **rate-limit 100/5000 en AMBOS extremos** (server tunnel.toml + relay tunnel.toml) — con 10/600 las lecturas venían incompletas/variables. Con 100/5000 get-cards es estable y completo. Patrón: el PRIMER get-device/get-cards tras idle suele dar timeout (warmup ARP), reintentar. Cosecha en `/root/harvest/` (union_harvest.sh para placas flaky).
+
+**COSECHA 2026-06-02 (datos confiables):**
+- **Palmetto (222451671): 240 cards.**
+- **Tequendama = sistema replicado de 227 cards únicas** en 4 placas: 225088590/.125=227, 425036574/.12=227, 223205300/.13=227, **423150802/.150=215 (le faltan 12, sin propias)**.
+- **Cruce Palmetto↔Tequendama:** ambas sedes=115, solo Palmetto=125, solo Tequendama=112, **total personas únicas=352**.
+- **Tequendama usa PIN de teclado** (campo extra en get-cards) → migración con `load-acl --with-pin` obligatorio o se borran PINs.
+- Implicación: las 112 solo-Teq NO están en cards.json → importarlas antes de publicar o load-acl las borra. Las 115 compartidas necesitan grupos que abran puertas de ambas sedes.
 - Certs mTLS en `/etc/uhppoted/tunnel/` (ca, server, client; SAN del server = doors.azc.com.co + 186.145.239.174 + 192.168.12.25; válidos 10 años).
 - Firewall Hestia: `ACCEPT 0.0.0.0/0 60443 TCP` (TUNNEL_TEQ, regla 19).
 - **Port-forward 60443/TCP → 192.168.12.25 ya abierto en Omada Palmetto** (el del server Mail+Puertas).
