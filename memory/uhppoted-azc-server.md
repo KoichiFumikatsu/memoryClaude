@@ -230,6 +230,17 @@ Al registrar las 4 placas Teq en el panel, httpd las pollea cada 30s por el tún
 
 **Fix permanente:** servicio `teq-keepalive.service` (`/usr/local/bin/teq-keepalive.sh`) — loop que hace `get-device` a las 4 placas Teq cada 15s, manteniendo el path caliente. Resultado: timeouts de httpd a 60010 cayeron de ~14/60s a **0**. Eventos de las 5 placas actualizan confiable (~30s). **Regla:** no correr ops CLI pesadas por el túnel concurrente con httpd; si los eventos se atascan, restart httpd. httpd default `udp.timeout`=2.5s (no en conf); subirlo NO ayuda (el warmup se DROPEA, no es lento) — el keepalive es la solución.
 
+## httpd NO puede pollear multi-controlador por UN túnel — Opción B (2026-06-02)
+
+**Causa raíz (arquitectural):** uhppoted-tunnel colapsa las 4 placas Teq en UNA dirección (`192.168.12.25:60010`). httpd las pollea **concurrente** y no puede demuxar las respuestas (todas vienen de la misma addr) → las cruza (`WARN invalid controller ID - expected:X, got:Y`) → el loop de poll se cuelga y arrastra a Palmetto. `uhppote-cli` no sufre (1 request a la vez). **Esto pasaría en cada sede nueva por túnel uhppoted.** El fix correcto sería WireGuard subnet-router (IPs reales distintas) o 1 puerto de túnel por controlador — ambos pesados/multi-instancia.
+
+**Decisión: Opción B (poller secuencial dedicado).**
+- **Estabilización:** se quitaron las 4 placas Teq de `controllers.json` → httpd **solo pollea Palmetto** (tiempo real, 0 cruces). Se **conservan** en `doors.json` (16 puertas, grupos siguen funcionando) y en `uhppoted.conf` (CLI/poller las alcanza). Backups `controllers.json.bak.poll-*`.
+- **Por qué no inyectar en el tab nativo:** httpd tiene `events.json` en memoria; inyecciones externas las pisa en su próximo persist salvo restart. Por eso Teq va en tab aparte.
+- **Poller:** `teq-events-poller.service` (`/usr/local/bin/teq-events-poller`) — secuencial, cada 60s hace `get-events` (con 3 reintentos por warmup) + `get-event` incremental por cursor, escribe `/var/uhppoted/teq-events.json` (events+cursor por placa, retiene 3000). NO toca httpd. .13 (223205300, v6.62) es flaky en frío → los reintentos lo cubren.
+- **Display:** endpoint `GET /api/teq-events` en schedule-manager + tab **"Eventos Teq"** en `/schedules/index.html` (tabla Hora/Placa/Puerta/Tarjeta/Acceso, auto-refresh 30s). El tab nativo de Eventos queda para Palmetto.
+- **`teq-keepalive.service`** sigue (pinguea las 4 cada 15s) — mantiene el path caliente para el poller y on-demand CLI.
+
 ## Seguridad ACL — NO publicar hasta reconciliar (regla dura)
 
 Asignar grupos→puertas en el panel NO toca los controladores (solo edita groups.json); nada cambia hasta un publish/load-acl. **Antes de cualquier publish: `compare-acl <tsv>`** = dry-run que muestra add/delete/update por controlador sin tocar nada. Publicar el cards.json actual borraría las 112 solo-Teq → quedarían sin entrar. **Algunas puertas de Teq usan el MISMO lector para entrada y salida** → revocar acceso ahí deja a la persona ENCERRADA (no solo afuera). Por eso reconciliación perfecta + compare-acl obligatorios antes de publicar a Tequendama.
