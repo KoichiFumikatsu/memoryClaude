@@ -175,7 +175,7 @@ WAN:
 **Relay = mini PC Windows de Tequendama** (el que corría el N3000, always-on, en 192.168.14.x).
 
 **Lado server (azc) — YA montado:**
-- Service `uhppoted-tunnel-tequendama.service`: `--in udp/listen:0.0.0.0:60000 --out tls/server:0.0.0.0:60443 --ca-cert/cert/key + --client-auth`. Escuchando TLS 60443 + UDP 60000. uhppoted-tunnel v0.8.12.
+- Service `uhppoted-tunnel-tequendama.service`: `--in udp/listen:0.0.0.0:60000 --out tls/server:0.0.0.0:60443 --ca-cert/cert/key + --client-auth`. Escuchando TLS 60443 + UDP 60000. **Release v0.9.0** (el binario se auto-reporta como `v0.8.12` al correr `version` — string embebido atrasado; no existe release v0.8.12, los tags van hasta v0.9.0). Ambos extremos del túnel deben usar el MISMO release (v0.9.0).
 - Certs mTLS en `/etc/uhppoted/tunnel/` (ca, server, client; SAN del server = doors.azc.com.co + 186.145.239.174 + 192.168.12.25; válidos 10 años).
 - Firewall Hestia: `ACCEPT 0.0.0.0/0 60443 TCP` (TUNNEL_TEQ, regla 19).
 - **Port-forward 60443/TCP → 192.168.12.25 ya abierto en Omada Palmetto** (el del server Mail+Puertas).
