@@ -229,6 +229,10 @@ Log: `/tmp/chain_mainstream-val-20260601-1425.log`. Outputs en `outputs/test-mai
 ### Dashboard caveat
 Dashboard.py fue killed por error en mi dedup inicial esta sesión (12:05:41 → 17:52:37). El watchdog dashboard busca paths hardcoded `/tmp/strinova_watchdog.log`; cuando chains usan nuevos session names, crear symlink o el dashboard pierde alerts.
 
+**Apagón Fumilinux → dashboard congelado (2026-06-01 noche)**: cuando se corta luz en Fumilinux, Torre 1 sigue generando (UPS o tolera), pero `dashboard.py` (local Fumilinux) muere. El HTML estático en `/home/kelsie/Pictures/ia-gen/_dashboard/index.html` queda congelado y el navegador auto-refresca el mismo archivo. Síntoma típico: "el dashboard quedó en la imagen N". Fix: `nohup python3 /home/kelsie/projects/ia-gen/dashboard.py > /tmp/dashboard.log 2>&1 &` + Ctrl+R en navegador. Verificar con `ps aux | grep dashboard.py`.
+
+**Bug regex fixed (2026-06-01)** en `dashboard.py:285`: `parse_chain_progress` usaba `seed(\d+)` que no matcheaba el formato `seed 1111` (con espacio) y `re.search` devolvía primer match en vez del último. Cambiado a `re.findall(...)[-1]` con `seed\s+(\d+)`. Antes de ese fix, la card "Progreso" mostraba "—/—" o quedaba en la imagen más vieja del tail.
+
 ### Video gen + Sync cel — aplazados
 - Video gen (Wan 2.1/2.2 + LTX-2.3 en sd-cli `-M vid_gen`): plan híbrido investigado, costuras inevitables anime↔Wan local, **APLAZADO**. Plan completo en `/home/kelsie/.claude/plans/mientras-se-hace-eso-ethereal-comet.md`.
 - Sync auto cel Android Tailscale (Syncthing en Fumilinux): plan investigado, **APLAZADO**.
