@@ -68,6 +68,19 @@ Microservicio Python `/usr/local/bin/schedule-manager` escuchando `127.0.0.1:844
 
 **Asignación card+profile:** `put-card 222451671 <card> <from> <to> "1:2,2,3,4"` — sintaxis door:profile, NO documentada pero funcional. Doors sin profile id van como Y (24/7).
 
+### CRUD verificado end-to-end + fix delete (2026-06-02)
+
+Probado contra el controlador real: **crear / leer / actualizar / asignar funcionan correctamente** desde la API (y por ende la UI). Update refleja bien multi-segmento (hasta 3) y cambios de días/horas.
+
+- **DELETE estaba roto:** el UT0311 no tiene delete por profile (solo `clear-time-profiles` borra TODOS). El workaround sobrescribía con rango `2000-01-01:2000-01-01` → el controlador **rechaza el año 2000** (lo trata como sentinela nula): `ERROR: could not create time profile`. **Fix:** `api_delete_profile` ahora usa `2020-01-01:2020-01-02` (rango expirado válido) + `_is_deleted()` filtra ese sentinela de `GET /profiles` para que el profile "borrado" desaparezca de la UI. El id sigue ocupado en el hardware (tope 254, irrelevante); re-crear el id lo sobrescribe. Backup `schedule-manager.bak.delfix-*`.
+- **`set-time-profile` rechaza año 2000** como fecha — usar >=2020 siempre.
+- **Asignación masiva verificada:** `POST /bulk-assign {cards:[],door:1,profile:7}` lee perms actuales de cada card, sobrescribe solo esa puerta, hace `put-card`. Confirmado card puerta1 Y→7 y restaurada.
+- **LIMITACIÓN multi-sede:** `CONTROLLER = '222451671'` está **hardcodeado** en `/usr/local/bin/schedule-manager` (línea 28). La UI de HORARIOS solo gestiona Sede 1. Para la 2da sede (controlador nuevo en montaje 2026-06-02) hay que parametrizar el controlador (selector de sede en UI + API).
+
+### Distribución real de cards por rol (2026-06-02)
+
+7 grupos con acceso por puerta definido, pero **240/240 cards están en "Empleados"** (1 también en Administrativos). Los grupos Directivos/Servicios Generales/Invitados existen con door-access configurado pero **sin cards asignadas**. OIDs: Administrativos=0.5.1, Retirados=0.5.2, Invitados=0.5.3, Directivos=0.5.8, Caso Especial=0.5.9, Servicios Generales=0.5.10, Empleados=0.5.11. Door-access por grupo: Administrativos y Servicios Generales = P1-P4; Directivos/Empleados/Invitados = solo P1 (Portería); Caso Especial y Retirados = []. Puertas: P1=(P) Portería, P2, P3, P4 (OIDs 0.3.1-0.3.4).
+
 ## SSH público al server (habilitado 2026-05-30)
 
 Port forward Omada `22 ext → 192.168.12.25:22` + iptables rule via `v-add-firewall-rule ACCEPT 0.0.0.0/0 22 TCP SSH_WAN`. Acceso desde cualquier red con clave SSH. Fail2ban-SSH activo (banea brute-force).
