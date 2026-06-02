@@ -77,6 +77,23 @@ Probado contra el controlador real: **crear / leer / actualizar / asignar funcio
 - **Asignación masiva verificada:** `POST /bulk-assign {cards:[],door:1,profile:7}` lee perms actuales de cada card, sobrescribe solo esa puerta, hace `put-card`. Confirmado card puerta1 Y→7 y restaurada.
 - **LIMITACIÓN multi-sede:** `CONTROLLER = '222451671'` está **hardcodeado** en `/usr/local/bin/schedule-manager` (línea 28). La UI de HORARIOS solo gestiona Sede 1. Para la 2da sede (controlador nuevo en montaje 2026-06-02) hay que parametrizar el controlador (selector de sede en UI + API).
 
+### Arquitectura ACL elegida: "B-desde-panel" + generador/publish (2026-06-02)
+
+**Decisión:** gestión central multi-controlador vía `uhppote-cli load-acl` (profile-aware), con `cards.json`/grupos del panel como fuente. NO se usa el "Synchronize ACL" del panel (pisa los time profiles). El panel sigue para alta de datos + monitoreo en vivo; el push a controladores lo hace load-acl con profiles intactos.
+
+**Confirmado:** el TSV de ACL transporta el **profile-id en la celda de puerta** (no solo Y/N); `load-acl` lo round-trips (`get-acl`→`load-acl` da `unchanged`). Los UT0311 son autónomos: con el ACL cargado abren sin server/internet, usando su reloj interno (→ hay que sincronizar hora periódicamente o los horarios fallan). Eventos no se pierden sin red: buffer interno se recupera al reconectar.
+
+**Door labels en `uhppoted.conf`** (necesarios para que get/load-acl tengan columnas de puerta): `UT0311-L0x.222451671.door.{1..4} = S1 Porteria | S1 Puerta 2 | S1 Puerta 3 | S1 Puerta 4`. Prefijo S1 = Sede 1; labels deben ser únicos cross-controlador. Backup `uhppoted.conf.bak.doorlabels-*`.
+
+**Generador + publish en schedule-manager** (nuevos endpoints):
+- `GET /api/role-profiles` · `PUT /api/role-profiles` — mapa rol→permiso en `/etc/uhppoted/role-profiles.json`. Valor por rol: `Y` (24/7), `N` (sin acceso) o id de profile. Default todo `Y` (Retirados `N`).
+- `GET /api/generate-tsv` — preview del TSV generado desde `cards.json` + `groups.json` + `controllers.json` + door labels del conf. Por puerta: `N` si ningún grupo de la card la concede; si la concede, el profile del rol (prioridad `ROLE_PRIORITY = Directivos>Administrativos>ServGen>Empleados>Invitados>CasoEspecial>Retirados`).
+- `POST /api/publish` — genera TSV, lo guarda versionado en `/var/uhppoted/acl/published-<ts>.tsv` + `latest.tsv`, corre `load-acl`. **Publicar con default todo-Y dio `updated:0 added:0 deleted:0` — el generador reproduce el ACL actual fielmente, no cambia nada hasta asignar un profile a un rol.** Backup `schedule-manager.bak.aclgen-*`.
+
+**UI:** nueva pestaña "Publicar" en `/schedules/index.html` (editor del mapa rol→profile, "Previsualizar TSV", "Publicar a controladores" con confirm). Backup `index.html.bak.publish-*`.
+
+**Multi-controlador (estado):** `publish`/`load-acl` YA es multi (itera `controllers.json` + conf), así que al registrar el controlador de la 2da sede el push lo incluye. Falta para multi-sede completo: (1) door labels del nuevo controlador en conf, (2) crear profiles con **mismos ids** en cada controlador — el CRUD de profiles del schedule-manager sigue con `CONTROLLER='222451671'` hardcodeado (línea 28), (3) cron `set-time` por controlador para el reloj.
+
 ### Distribución real de cards por rol (2026-06-02)
 
 7 grupos con acceso por puerta definido, pero **240/240 cards están en "Empleados"** (1 también en Administrativos). Los grupos Directivos/Servicios Generales/Invitados existen con door-access configurado pero **sin cards asignadas**. OIDs: Administrativos=0.5.1, Retirados=0.5.2, Invitados=0.5.3, Directivos=0.5.8, Caso Especial=0.5.9, Servicios Generales=0.5.10, Empleados=0.5.11. Door-access por grupo: Administrativos y Servicios Generales = P1-P4; Directivos/Empleados/Invitados = solo P1 (Portería); Caso Especial y Retirados = []. Puertas: P1=(P) Portería, P2, P3, P4 (OIDs 0.3.1-0.3.4).

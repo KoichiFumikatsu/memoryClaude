@@ -132,3 +132,6 @@ Each entry: **[Date] Topic** — decision made, and *why*.
 
 **[2026-05-21] TL Games — sistema de versionamiento por juego** — Cada juego traducido tiene `versions/vX.X.XX/` con snapshot del ZIP + NOTAS.txt automáticas, `05_snapshot.py`, `06_delta.py` y `GAME_INFO.txt`. Patrón implementado primero en TheDemonLordsLover.
 *Why: facilita actualizar traducciones al recibir nuevas versiones del juego, empaquetar por versión, y tener referencia de saves/binarios sin reconstruir el contexto desde cero.*
+
+**[2026-06-02] uhppoted — arquitectura ACL "B-desde-panel" (load-acl), NO el Sync del panel** — Gestión central multi-controlador vía `uhppote-cli load-acl` con `cards.json`/grupos del panel como fuente; un generador construye el TSV (con profile-ids en celdas de puerta) y un botón "Publicar" en la UI de Horarios corre load-acl. El "Synchronize ACL" del panel queda **prohibido** porque escribe Y/N y borra los time profiles. Detalles e implementación en `uhppoted-azc-server.md`.
+*Why: es la única forma de tener gestión central de tarjetas multi-sede Y time profiles que sobreviven al sync. load-acl es profile-aware y empuja a todos los controladores del conf en un comando; el Sync del panel no conoce profiles. Generar el TSV desde cards.json mantiene el panel coherente y en tiempo real.*
