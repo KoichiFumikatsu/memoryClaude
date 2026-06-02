@@ -166,6 +166,28 @@ WAN:
 - `/root/backups/pre-uhppoted-migration-20260529-*` — configs originales antes de cambios
 - `/root/backups/pre-ip-migration-20260529-103254/` — backup completo del server antes de la migración 192.168.0.206 → 192.168.12.25
 
+## Sede Tequendama — controladores remotos vía uhppoted-tunnel (2026-06-02)
+
+**4 controladores en red `192.168.14.x`** (otra sede, sin IP fija ni port-forward en su ISP): SN 223205300/.13, 225088590/.125, 423150802/.150, 425036574/.12. **Flag captura:** máscaras inconsistentes (225088590 tiene /22 `255.255.252.0`, los demás /24) — normalizar a la máscara real de la LAN + gateway antes de operar.
+
+**Transporte elegido: uhppoted-tunnel (mTLS), relay dial-out desde Tequendama** → el Omada de Tequendama NO necesita nada; solo se abrió 1 puerto en el Omada del server. (Descartado: "wiedgan" era el software viejo N3000/Wiegand del mini PC, NO WireGuard — no hay túnel previo que reusar.)
+
+**Relay = mini PC Windows de Tequendama** (el que corría el N3000, always-on, en 192.168.14.x).
+
+**Lado server (azc) — YA montado:**
+- Service `uhppoted-tunnel-tequendama.service`: `--in udp/listen:0.0.0.0:60000 --out tls/server:0.0.0.0:60443 --ca-cert/cert/key + --client-auth`. Escuchando TLS 60443 + UDP 60000. uhppoted-tunnel v0.8.12.
+- Certs mTLS en `/etc/uhppoted/tunnel/` (ca, server, client; SAN del server = doors.azc.com.co + 186.145.239.174 + 192.168.12.25; válidos 10 años).
+- Firewall Hestia: `ACCEPT 0.0.0.0/0 60443 TCP` (TUNNEL_TEQ, regla 19).
+- **Port-forward 60443/TCP → 192.168.12.25 ya abierto en Omada Palmetto** (el del server Mail+Puertas).
+- Bundle para el relay en `/root/tequendama-relay.tar.gz` (ca.cert, client.cert, client.key + LEEME.txt con comandos).
+- **Flag rate limit:** el túnel loguea `1 req/s, burst 120` por defecto → un `load-acl` de 240 cards puede tardar ~2 min. Afinar con `--config` TOML si molesta.
+
+**Lado Windows (relay) — PENDIENTE (lo hace Koichi):**
+- Bajar `uhppoted-tunnel.exe` v0.8.12 (GitHub releases), copiar los 3 certs.
+- Cliente: `uhppoted-tunnel.exe --console --in tls/client:186.145.239.174:60443 --out udp/broadcast:192.168.14.255:60000 --ca-cert ca.cert --cert client.cert --key client.key`. Luego `daemonize` como servicio.
+
+**Tras el túnel:** registrar los 4 controladores en uhppoted.conf con `.address` apuntando al listen local del túnel (`192.168.12.25:60000` / `127.0.0.1:60000`) — el protocolo es serial-addressed, el broadcast remoto entrega al correcto. Door labels `S2 ...`. Profiles con **mismos ids** que Sede 1. `publish`/load-acl ya empuja a ambas sedes.
+
 ## Pendientes (próximas sesiones)
 
 - ~~Bug System (controllers.html) texto plano~~ RESUELTO 2026-06-02 (gzip upstream borra content-type → fix `proxy_set_header Accept-Encoding ""` en nginx; ver sección dedicada arriba).
