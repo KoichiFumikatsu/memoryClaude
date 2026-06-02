@@ -206,6 +206,18 @@ Comando de test (server): `uhppote-cli --bind 192.168.12.25:0 --broadcast 192.16
 
 **Tras el túnel:** registrar los 4 controladores en uhppoted.conf con `.address` apuntando al listen local del túnel (`192.168.12.25:60000` / `127.0.0.1:60000`) — el protocolo es serial-addressed, el broadcast remoto entrega al correcto. Door labels `S2 ...`. Profiles con **mismos ids** que Sede 1. `publish`/load-acl ya empuja a ambas sedes.
 
+## Registro de controladores en el panel + automatización (2026-06-02)
+
+Las 4 placas de Tequendama quedaron registradas en el panel (`controllers.json` 0.2.2-0.2.5 + `doors.json` 0.3.5-0.3.16). Ahora el panel muestra **5 controladores / 16 puertas** (4 Palmetto + 12 Teq) → la asignación de grupos ya puede conceder puertas de ambas sedes. controllers.json `address` para Teq = `192.168.12.25:60010` (cosmético; el panel comunica vía uhppoted.conf — Palmetto tiene un address distinto en cada archivo y funciona, prueba de que usa conf). JSON owner root:root, service corre como root. Door usage real Teq: .13=P1,P2 · .125=P1,P2 · .150=P1-P4 · .12=P1-P4.
+
+**Automatización `register-controller`** (`/usr/local/bin/register-controller`): un comando idempotente que para una placa hace conf address+protocol, valida con get-device (reintenta por warmup), door labels en conf, y registro en panel (controllers.json+doors.json con OIDs auto, backup, restart httpd). Uso:
+```
+register-controller <serial> "<nombre>" <doors:1,2|auto> [address-tunel] [prefix]
+```
+Auto-detect de puertas NO es fiable sobre el túnel (lecturas parciales) → pasar puertas explícitas. **Prerequisito manual por sede nueva** (no automatizable server-side): montar el relay Windows + listen del túnel en puerto dedicado distinto + abrir puerto en Omada. Una vez la placa responde get-device, `register-controller` hace el resto.
+
+**httpd pollea Teq por el túnel cada 30s** → logs `WARN read udp i/o timeout` ocasionales (warmup/intermitente), no crítico; el panel puede mostrar Teq offline a ratos.
+
 ## Pendientes (próximas sesiones)
 
 - ~~Bug System (controllers.html) texto plano~~ RESUELTO 2026-06-02 (gzip upstream borra content-type → fix `proxy_set_header Accept-Encoding ""` en nginx; ver sección dedicada arriba).
