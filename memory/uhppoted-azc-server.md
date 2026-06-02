@@ -218,6 +218,16 @@ Auto-detect de puertas NO es fiable sobre el túnel (lecturas parciales) → pas
 
 **httpd pollea Teq por el túnel cada 30s** → logs `WARN read udp i/o timeout` ocasionales (warmup/intermitente), no crítico; el panel puede mostrar Teq offline a ratos.
 
+## Eventos multi-placa + salto de cursor (2026-06-02)
+
+Al registrar las placas Teq, httpd empieza a traer eventos **desde el índice 1 (más viejo) hacia adelante** → por el túnel tarda eternidades en llegar a hoy, así que el tab de Eventos solo mostraba Palmetto (los Teq quedaban sepultados con timestamps viejos: 2017/2022/2025). **Relojes de los controladores OK** (get-time = hoy), o sea no era desfase; era el cursor. httpd reanuda desde el índice `index` máximo por device en `events.json`.
+
+**Fix (salto de cursor):** script `/root/cursor_jump.py` — para cada placa Teq hace `get-events` (rango), trae los 25 eventos más recientes con `get-event <serial> <idx>`, los inyecta en `events.json` con OID `0.6.N` continuando el máximo + door-name resuelto, y borra los viejos de esa placa. Tras eso httpd reanuda desde el índice reciente → eventos nuevos aparecen solos. **Correr con httpd detenido** (stop → script → start). Si una placa da timeout en get-events (warmup), warmup con get-device y reintentar. Backups `events.json.bak.cursorjump2-*`. Formato get-event: `serial idx timestamp card door granted reason`. get-events: `serial first last current`.
+
+## Seguridad ACL — NO publicar hasta reconciliar (regla dura)
+
+Asignar grupos→puertas en el panel NO toca los controladores (solo edita groups.json); nada cambia hasta un publish/load-acl. **Antes de cualquier publish: `compare-acl <tsv>`** = dry-run que muestra add/delete/update por controlador sin tocar nada. Publicar el cards.json actual borraría las 112 solo-Teq → quedarían sin entrar. **Algunas puertas de Teq usan el MISMO lector para entrada y salida** → revocar acceso ahí deja a la persona ENCERRADA (no solo afuera). Por eso reconciliación perfecta + compare-acl obligatorios antes de publicar a Tequendama.
+
 ## Pendientes (próximas sesiones)
 
 - ~~Bug System (controllers.html) texto plano~~ RESUELTO 2026-06-02 (gzip upstream borra content-type → fix `proxy_set_header Accept-Encoding ""` en nginx; ver sección dedicada arriba).
