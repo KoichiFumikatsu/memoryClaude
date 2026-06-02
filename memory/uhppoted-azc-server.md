@@ -87,9 +87,17 @@ ssh root@192.168.12.25         # acceso LAN local (sigue funcionando)
 
 **custom.js solo se carga en páginas que tienen `{{template "custom.js" .}}` dentro de `<script type="module">`.** El template SOLO contiene imports + window assignments — NO incluye las tags `<script>`, tiene que ir DENTRO del module existente. Páginas que originalmente NO lo cargaban: overview, controllers, logs, users — se agregó manualmente.
 
-## Bug conocido pendiente (2026-05-31)
+## Bug controllers.html "texto plano" — RESUELTO 2026-06-02
 
-`https://doors.azc.com.co/sys/controllers.html` (System) se renderiza como **HTML texto plano** en el navegador del usuario, no como página. El HTML servido por el server es válido (verificado con curl, content-type correcto), idéntico estructuralmente a doors.html que SÍ renderiza. **Sin diagnóstico definitivo.** Las otras páginas que también modifiqué (overview, logs, users) — pendiente confirmar si funcionan. Probables causas a investigar: cache stale específica de Chrome, service worker fantasma, BFCache, o algún byte unicode invisible en el archivo (md5 idéntico al `.bak.customjs` modificado).
+**Síntoma:** páginas del panel (controllers, cards, events, logs, users...) se renderizaban como HTML texto plano en el browser, no como página. Reproducible en incógnito (NO era cache).
+
+**Causa raíz:** el gzip interno de **uhppoted-httpd** (binario Go, puerto 8543) comprime respuestas sobre un umbral de tamaño (~12-16KB) y **al comprimir borra el header `Content-Type`**. Go auto-detecta el content-type del primer `Write`, pero con gzip el primer Write son bytes mágicos `1f 8b`, así que el type sale vacío. nginx pasa esa respuesta pre-gzipeada sin content-type. Con `add_header X-Content-Type-Options nosniff` activo en el vhost, el browser se niega a sniffear y muestra texto plano. Páginas chicas (doors.html, 12KB) quedaban bajo el umbral → no gzip upstream → conservaban content-type → renderizaban bien. Por eso doors SÍ y controllers NO.
+
+**Diagnóstico decisivo:** `curl -b cookie -H 'accept-encoding: gzip' https://127.0.0.1:8543/sys/controllers.html` devuelve `content-encoding: gzip` SIN `content-type`; doors.html devuelve `content-type: text/html` SIN gzip.
+
+**Fix aplicado (solo nginx, sin tocar el binario):** en `location /` del vhost `doors.azc.com.co` se agregó `proxy_set_header Accept-Encoding "";` — evita que el upstream gzipee, nginx recibe HTML plano con content-type correcto y lo gzipea él mismo (preservando type + `vary: Accept-Encoding`). Verificado: las 7 páginas del panel ahora devuelven `content-type: text/html; charset=utf-8` por nginx. Backup del conf en `nginx.ssl.conf.bak.gzipfix-*`.
+
+**Lección:** `nosniff` + respuesta proxeada que pierde content-type = render texto plano. Si un upstream gzipea y no setea content-type, vaciar `Accept-Encoding` hacia el upstream y dejar que nginx comprima.
 
 JS custom modificado: `DOOR_OPENER_BASE = "/door-opener"` (path relativo, mismo origin, mismo cert LE). El JS original llamaba `https://${window.location.hostname}:8445` que fallaba externamente.
 
@@ -130,7 +138,7 @@ WAN:
 
 ## Pendientes (próximas sesiones)
 
-- **Bug System (controllers.html) renderiza como texto plano** en navegador del usuario — sin diagnóstico. Investigar service worker / BFCache / cache de Chrome.
+- ~~Bug System (controllers.html) texto plano~~ RESUELTO 2026-06-02 (gzip upstream borra content-type → fix `proxy_set_header Accept-Encoding ""` en nginx; ver sección dedicada arriba).
 - **Time profiles reales:** definir los 3-5 horarios concretos por rol (Empleados, Directivos, Servicios Generales, etc.) y aplicar masivamente con la UI Schedules.
 - **Cambiar password admin de uhppoted** (sigue en default `admin / uhppoted`)
 - **NAT hairpin / DNS interno**: clientes en LAN de la oficina del server tienen problema accediendo `doors.azc.com.co` por NAT loopback. Workaround temporal: `/etc/hosts → 192.168.12.25 doors.azc.com.co` por máquina. Fix definitivo: habilitar hairpin en Omada, o configurar zona DNS local en BIND9 del server (named ya corre).
