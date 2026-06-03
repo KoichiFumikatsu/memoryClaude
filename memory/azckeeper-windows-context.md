@@ -8,13 +8,13 @@ Activadores de este archivo: **"AZCKeeper Updater"**, **"builder"**, **"build-re
 
 ## Estado de ramas (2026-05-28)
 
-| Rama | Estado (2026-06-03) | Notas |
+| Rama | Estado (2026-06-03 post-consolidación) | Notas |
 |---|---|---|
-| `origin/master` | f8aafa3 | Sin tocar — los 3 commits de restructura siguen solo en `DevLinux` |
-| `origin/DevLinux` | 5072c2f | Push 2026-05-28. Contiene restructura + updater + builder + sln |
-| `origin/feature/web-blocking` | 1df4130 | Push 2026-06-01 (fix repurpose). DevLinux + cherry-pick web blocking + fix policies/PolicyRepo |
+| `origin/master` | f8aafa3 | Sin tocar — producción real está aquí |
+| `origin/DevLinux` | f0dac1c | **Branch general de integración** tras consolidación 2026-06-03. Restructura + updater + builder + web-blocking + install-coverage + build-release.sh + higiene gitignore |
+| ~~`origin/feature/web-blocking`~~ | BORRADA 2026-06-03 | Sus 4 commits viven en DevLinux vía FF merge. Branch eliminada local y remoto |
 | `origin/desarrollo` | 1613059 | Rama HUÉRFANA del aprendiz Henao2007. NO mergear (regresiones — ver abajo) |
-| master local | 5072c2f | 3 commits adelante de origin/master (no pushed); idéntico a DevLinux |
+| master local | 5072c2f | 3 commits adelante de origin/master (no pushed); apuntando al estado pre-consolidación |
 
 ---
 
@@ -128,10 +128,9 @@ Estos siguen en `/home/kelsie/Documents/AZCKeeper/`:
 
 ## Próximos pasos pendientes
 
-1. Push de los tres commits (`a4b0efb`, `932cfb1`, `5072c2f`) a `origin/master`. Pendiente decisión: cuándo merge a master desde DevLinux/feature/web-blocking.
-2. Verificación end-to-end de `build-release.bat` desde el portátil Windows tras clonar repo limpio.
-3. Atacar hallazgo [E]: verificación de hash/firma del ZIP en el updater (ya viable desde Linux).
-4. Meta a futuro: portar `build-release.bat` a un script equivalente que corra en Fumilinux con `dotnet publish` puro + `zip` GNU — eliminando dependencia del portátil Windows para builds.
+1. Decidir merge `DevLinux` → `master` (origin/master sigue en f8aafa3, DevLinux en f0dac1c). Sub-decisión: incluir web-blocking inerte o sacarlo del release (ver hallazgo [M] en `project_azckeeper.md`).
+2. Atacar hallazgo [E]: verificación de hash/firma del ZIP en el updater (ya viable desde Linux con `build-release.sh`).
+3. ~~Build desde Linux~~ — RESUELTO 2026-06-03: `build-release.sh` en `/home/kelsie/AZCKeeper/` cross-compila a Windows desde Fumilinux usando SDK Microsoft user-local (`/home/kelsie/.dotnet/`, NO el del apt Ubuntu que es subset). Output `build/AZCKeeper_v<version>.zip` (~75 MB) idéntico al `.bat`. Flag clave `-p:EnableWindowsTargeting=true`. El `.bat` se mantiene como backup.
 
 ---
 
