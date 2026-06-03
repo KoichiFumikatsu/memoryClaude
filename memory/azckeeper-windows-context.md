@@ -8,11 +8,11 @@ Activadores de este archivo: **"AZCKeeper Updater"**, **"builder"**, **"build-re
 
 ## Estado de ramas (2026-05-28)
 
-| Rama | Estado | Notas |
+| Rama | Estado (2026-06-03) | Notas |
 |---|---|---|
 | `origin/master` | f8aafa3 | Sin tocar — los 3 commits de restructura siguen solo en `DevLinux` |
 | `origin/DevLinux` | 5072c2f | Push 2026-05-28. Contiene restructura + updater + builder + sln |
-| `origin/feature/web-blocking` | 7160d0a | Push 2026-05-28. DevLinux + cherry-pick limpio de la feature de bloqueo web |
+| `origin/feature/web-blocking` | 1df4130 | Push 2026-06-01 (fix repurpose). DevLinux + cherry-pick web blocking + fix policies/PolicyRepo |
 | `origin/desarrollo` | 1613059 | Rama HUÉRFANA del aprendiz Henao2007. NO mergear (regresiones — ver abajo) |
 | master local | 5072c2f | 3 commits adelante de origin/master (no pushed); idéntico a DevLinux |
 
@@ -166,15 +166,16 @@ Conclusión: **base obsoleta** (pre-parches [C][D][F] del 2026-05-08). Pendiente
 
 ---
 
-## `feature/web-blocking` — cherry-pick selectivo (2026-05-28)
+## `feature/web-blocking` — cherry-pick selectivo (2026-05-28) + fix 2026-06-01
 
-Branch creada desde `5072c2f` (DevLinux/master local). 3 commits sobre eso:
+Branch creada desde `5072c2f` (DevLinux/master local). 4 commits sobre eso:
 
-| Commit | Cambios |
-|---|---|
-| `a6d69ec` | `feat(blocking)`: 4 archivos nuevos en `AZCKeeper_Client/Blocking/` (1093 líneas, namespace `AZCKeeper_Cliente.Blocking`) |
-| `f67d87e` | `feat(client)`: ConfigManager (WebBlockingConfig class + property + init), ApiClient (EffectiveWebBlocking DTO), CoreService (field + Initialize en InitializeModules + Shutdown + bloque policy apply tras Blocking en PerformHandshake) — 65+/−1 |
-| `7160d0a` | `feat(web)`: PolicyRepo.getWebBlockedDomains() con cache 60s + normalizeWebBlockedDomain(), InputValidator.validateDomainArray(), ClientHandshake normaliza webBlocking, bootstrap.php (fix latente: requires de `ClientReEnroll.php` + `WindowEpisodeBatch.php` faltantes), policies.php (UI nueva "Web Blocking" + `syncGlobalWebBlockingDomains()` helper que escribe en `keeper_policy_assignments.policy_json.webBlocking` global tras save_leisure_apps) — 256+/−10 |
+| Commit | Fecha | Cambios |
+|---|---|---|
+| `a6d69ec` | 2026-05-28 | `feat(blocking)`: 4 archivos nuevos en `AZCKeeper_Client/Blocking/` (1093 líneas, namespace `AZCKeeper_Cliente.Blocking`) |
+| `f67d87e` | 2026-05-28 | `feat(client)`: ConfigManager (WebBlockingConfig class + property + init), ApiClient (EffectiveWebBlocking DTO), CoreService (field + Initialize en InitializeModules + Shutdown + bloque policy apply tras Blocking en PerformHandshake) — 65+/−1 |
+| `7160d0a` | 2026-05-28 | `feat(web)`: PolicyRepo.getWebBlockedDomains() con cache 60s + normalizeWebBlockedDomain(), InputValidator.validateDomainArray(), ClientHandshake normaliza webBlocking, bootstrap.php (fix latente: requires de `ClientReEnroll.php` + `WindowEpisodeBatch.php` faltantes), policies.php (UI nueva "Web Blocking" + `syncGlobalWebBlockingDomains()` helper que escribe en `keeper_policy_assignments.policy_json.webBlocking` global tras save_leisure_apps) — 256+/−10 |
+| `1df4130` | 2026-06-01 | `fix(web)`: habilita Web Blocking como módulo independiente en modal. `policies.php` — modal `enabled` y textarea de dominios pasan a editables (antes `enabled` se derivaba de `domains.length > 0`); "Por Ventana" vuelve a `window_title LIKE` para tracking de ocio (Henao2007 lo había repurposeado como entrada de dominios); `save_leisure_apps` deja de llamar `syncGlobalWebBlockingDomains()` y la función se elimina. `PolicyRepo.php` — `getWebBlockedDomains()` + `normalizeWebBlockedDomain()` + caches eliminadas (código muerto sin caller tras quitar la sync). Net +8/-130 líneas en 2 archivos. |
 
 ### Flujo end-to-end de la feature
 
