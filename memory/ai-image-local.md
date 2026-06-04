@@ -277,5 +277,8 @@ Suposición FALSA: "seed única = personaje distinto cada frame". El char tag fi
 - Sort dropdown global (newest/oldest/name/seed asc-desc) + view-mode toggle (Por carpeta / Todas juntas). Persistencia localStorage. Sort cliente sobre data-attributes.
 - Cap de 20 imgs por carpeta eliminado.
 
+### Botón "📝 publicar" del dashboard — mensaje + ALT (2026-06-04)
+`build_caption()` en `dashboard.py` ahora devuelve **dict** `{"caption", "alt"}` (antes string), y `/api/caption` responde **JSON**. El modal tiene **2 textareas**: *Mensaje* (caption trilingüe ja/en/es + hashtags, como siempre) y *Descripción / ALT* (texto objetivo de accesibilidad para la casilla "descripción de imagen" de X). Cada uno con su botón `copyField(id)` (la vieja `copyCap()` se eliminó). El ALT lo genera el MISMO Claude Haiku en una sola llamada (no duplica latencia), en español, no-gráfico para NSFW. Cadena fallback intacta: Claude Haiku → ollama (ambos ahora piden campo `alt` en su JSON) → plantilla; si nadie da ALT, `_fallback_alt(name, clean)` lo arma desde los tags del PNG. Modelo: `CAPTION_MODEL` (Haiku). Tras editar: `systemctl --user restart iagen-dashboard`.
+
 ### Negativos: NO child/loli (decisión 2026-06-04)
 Quitar `child` y `loli` del negative prompt de TODA generación general del stack. Contenido para distribución JP (loli legal y masivamente entrenado, 200k posts danbooru). Ponerlos pelea contra chars de diseño canon petite (ej. `qiqi_(genshin_impact)`). Al clonar chains que los traían (maomao-gokkun2b traía `child, loli`), borrarlos; mantener el resto de negativos de calidad/anatomía.
