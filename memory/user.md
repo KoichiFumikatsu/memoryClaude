@@ -5,7 +5,9 @@
 - **Apodo gaming**: Kelsie
 - **Email**: fumikatsu.koichi@gmail.com
 - **Celular**: 302 244 9235
-- **Ubicación**: Japón (desde 2026-06-04) — colombiano, originario de Cali. Usar esto al contextualizar zona horaria, idioma local y referencias geográficas.
+- **Ubicación actual**: Tokio, Japón (desde ~2024, ya 2 años). Usar esto para zona horaria (JST/UTC+9), idioma local y referencias geográficas.
+- **Origen**: nacido en Tokio, Japón. Vivió en Colombia (Cali) de los 5 a los 26 años; regresó a Japón hace ~2 años.
+- **REGLA CV / hojas de vida**: en CVs y perfiles laborales mantener ubicación = **Colombia** (sigue empleado por empresa colombiana, Grupo AZC). NO poner Japón en material profesional.
 - **LinkedIn**: existe, sin actualizar — pendiente
 
 ## Languages
