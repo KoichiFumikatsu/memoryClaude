@@ -276,3 +276,6 @@ Suposición FALSA: "seed única = personaje distinto cada frame". El char tag fi
 - POST `/api/favorite` toggle en `~/Pictures/ia-gen/_favoritos/<grupo>/<file>`. Sección Favoritos arriba.
 - Sort dropdown global (newest/oldest/name/seed asc-desc) + view-mode toggle (Por carpeta / Todas juntas). Persistencia localStorage. Sort cliente sobre data-attributes.
 - Cap de 20 imgs por carpeta eliminado.
+
+### Negativos: NO child/loli (decisión 2026-06-04)
+Quitar `child` y `loli` del negative prompt de TODA generación general del stack. Contenido para distribución JP (loli legal y masivamente entrenado, 200k posts danbooru). Ponerlos pelea contra chars de diseño canon petite (ej. `qiqi_(genshin_impact)`). Al clonar chains que los traían (maomao-gokkun2b traía `child, loli`), borrarlos; mantener el resto de negativos de calidad/anatomía.
