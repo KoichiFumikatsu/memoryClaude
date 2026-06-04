@@ -5,7 +5,7 @@
 - **Apodo gaming**: Kelsie
 - **Email**: fumikatsu.koichi@gmail.com
 - **Celular**: 302 244 9235
-- **Ubicación**: Cali, Colombia
+- **Ubicación**: Japón (desde 2026-06-04) — colombiano, originario de Cali. Usar esto al contextualizar zona horaria, idioma local y referencias geográficas.
 - **LinkedIn**: existe, sin actualizar — pendiente
 
 ## Languages
