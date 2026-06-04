@@ -254,6 +254,13 @@ Dashboard.py fue killed por error en mi dedup inicial esta sesión (12:05:41 →
 
 **Regla**: tags exclusivos (`single X`, `one X only`, `just one Y`) con peso >1.2 expulsan otros elementos del scenario aunque estén pedidos en el resto del prompt. Pesos seguros para refuerzo: 1.3-1.4 máx. >1.5 degrada. Problemas puntuales (duplicación en 1 seed) tratar caso por caso, no cross-char.
 
+### Hires-fix VIABLE en RX570 4GB (2026-06-04)
+Para mejorar calidad / arreglar detalles pequeños deformes (dedos, orejas, iris): img2img base 832x1216 → **1024x1536** (~1.25x, /64), denoise 0.40-0.55, 50 steps. **NO OOMea** porque el sd-server corre con `--vae-tiling` + `--fa`. Encode ~64s, decode ~155s, ~16-20min/img. La nota vieja "1024² siempre OOM en VAE" era de antes del flash-attention.
+
+**Los steps NO son la palanca de calidad** (50≈55≈60, meseta a ~50 — probado mismo día NSFW y SFW). Los detalles chicos se deforman por RESOLUCIÓN (pocos píxeles), no por steps. Hires-fix re-renderiza con más píxeles y los resuelve.
+
+Denoise: 0.40 = refine seguro (conserva composición), 0.55 = arregla manos/orejas rotas pero redibuja/deriva. Negativo: `(bad hands:1.3), (deformed fingers:1.3), (deformed ears:1.2)`. Workflow: batch base 832x1216 rápido → hero pass hires-fix solo sobre keepers. Script `chain_hiresfix-test.sh`. LoRAs detalle/manos siguen bloqueadas (merge_lora.py bug).
+
 ### Secuencias NSFW multi-etapa — técnica validada (2026-06-04, maomao gokkun)
 Para secuencia tipo storyboard de un acto (oral→deepthroat→cum→tragado→afterglow) de UN personaje:
 
