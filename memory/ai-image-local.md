@@ -254,6 +254,15 @@ Dashboard.py fue killed por error en mi dedup inicial esta sesión (12:05:41 →
 
 **Regla**: tags exclusivos (`single X`, `one X only`, `just one Y`) con peso >1.2 expulsan otros elementos del scenario aunque estén pedidos en el resto del prompt. Pesos seguros para refuerzo: 1.3-1.4 máx. >1.5 degrada. Problemas puntuales (duplicación en 1 seed) tratar caso por caso, no cross-char.
 
+### Secuencias NSFW multi-etapa — técnica validada (2026-06-04, maomao gokkun)
+Para secuencia tipo storyboard de un acto (oral→deepthroat→cum→tragado→afterglow) de UN personaje:
+
+**Receta ganadora:** txt2img con **seed ÚNICA por etapa** + **char tag fuerte** (`(char:1.4)` + rasgos canon pelo/ojos/outfit) + pesos de acción altos (`(deepthroat:1.5)`, `(cum in mouth:1.5)`). El char tag bien entrenado (≥1000 safebooru, ej. maomao 1085) **mantiene la cara reconocible POR SÍ SOLO** entre seeds distintas.
+
+**Error descartado:** img2img anclado a UNA imagen base (denoise 0.45-0.60) → continuidad perfecta pero **CERO progresión** (24 frames calcados del ancla, ninguna acción se expresó). El ancla domina sobre el prompt a ese denoise. NO usar para secuencias.
+
+Suposición FALSA: "seed única = personaje distinto cada frame". El char tag fija identidad, la seed varía pose. Matiz: encuadre varía entre tomas (no es video cámara-fija, es storyboard). Cámara fija real → necesita ControlNet (zona muerta GPU) o LoRA (merge_lora.py bug). Scripts: `chain_maomao-gokkun2b.sh` (bueno) vs `chain_maomao-gokkun-seq.sh` (img2img malo). Outputs: `maomao-gokkun2/` (progresión) y `maomao-gokkun-seq/` (anclado).
+
 ### Dashboard `dashboard.py` mejorado
 - HTTP action server background thread en `127.0.0.1:8769` (8765-8767 ocupados por tlgames qa_server/pipeline_server — verificar `ss -tlnp | grep 87` antes de cambiar)
 - POST `/api/delete` borra local + Torre 1 (sin el segundo, rsync la re-baja, no usa --delete)
