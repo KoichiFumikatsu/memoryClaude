@@ -282,3 +282,13 @@ Suposición FALSA: "seed única = personaje distinto cada frame". El char tag fi
 
 ### Negativos: NO child/loli (decisión 2026-06-04)
 Quitar `child` y `loli` del negative prompt de TODA generación general del stack. Contenido para distribución JP (loli legal y masivamente entrenado, 200k posts danbooru). Ponerlos pelea contra chars de diseño canon petite (ej. `qiqi_(genshin_impact)`). Al clonar chains que los traían (maomao-gokkun2b traía `child, loli`), borrarlos; mantener el resto de negativos de calidad/anatomía.
+
+## Dashboard — sync confiable + batch + labels (2026-06-05)
+
+Añadido a `dashboard.py` (Fumilinux, servicio `iagen-dashboard.service`; tras editar `systemctl --user restart iagen-dashboard.service`):
+
+- **Panel "🔄 Sincronización" (PULL)**: el dashboard hace `rsync -az --mkpath --protect-args` DESDE Torre 1 (`remote_sync_folders()` por `find -printf`, `pull_folder()`, `run_sync()` en thread con estado en `SYNC_STATE`). Resuelve el caso real: Torre 1 genera sin internet → nunca empuja → al volver, el botón trae lo perdido (rsync solo baja faltantes/cambiados). Endpoints: `/api/sync_list|sync_run|sync_status|sync_ignore|sync_unignore`. Modo "incluir ya descargadas" (`all_mode`) re-sincroniza carpetas locales para recuperar imágenes faltantes de un batch parcial.
+- **Ignore compartido**: usa el MISMO `~/.config/iagen-sync/ignored.txt` que el CLI `iagen-sync` (~/.local/bin). Una sola fuente de verdad: ignorar en el dashboard se refleja en el CLI y viceversa. Carpetas con prefijo `_` (p.ej. `_archive`) se omiten del sync (igual que la galería local ignora `_*`).
+- **Selector batch**: toggle "☑ Seleccionar" en sort-bar → checkboxes por card + barra flotante (`#batch-bar`) con SFW/Sugerente/NSFW, ★Fav, 🔧Hires, ✕Eliminar, Todas visibles, Limpiar. Borrado por lote = endpoint `/api/delete_batch` (1 sola llamada SSH `rm -f` con `shlex.quote`). Rating/fav/hires = loop client-side sobre endpoints existentes. En modo selección el auto-reload se pausa.
+- **Mini-label por imagen**: badge SFW/SUGER/NSFW arriba-izq de cada card (reusa CSS `badge-*` y `image_rating()`); se actualiza en vivo al cambiar rating (modal o batch) vía `updateCardBadge()`.
+- **Prompt-en-ejecución: APLAZADO** (2026-06-05). sd-server NO loguea el prompt (solo steps). La opción robusta sería un sentinel `/tmp/iagen_current_prompt.json` escrito por `gen.sh` antes del curl (parche con backup `gen.sh.bak` en Torre 1, marker de inserción `}))")` tras el PAYLOAD). El usuario eligió omitirlo por ahora; si se retoma, esa es la vía.

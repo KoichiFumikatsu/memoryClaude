@@ -36,14 +36,14 @@ ssh kelsielinux@192.168.12.7
 - Funciona desde cualquier red
 
 ### Escritorio remoto (GNOME Remote Desktop + RDP)
-- Puerto: **3390** (cambió de 3389 — 2026-05-28)
+- Puerto: **3389** (verificado 2026-06-04)
 - Credenciales: kelsielinux / Fumi0926
 - Certificado TLS en `~/.local/share/gnome-remote-desktop/`
-- Comando: `xfreerdp /v:100.67.216.43:3390 /u:kelsielinux /p:Fumi0926 /cert:ignore /dynamic-resolution +clipboard`
+- Comando: `xfreerdp /v:100.67.216.43:3389 /u:kelsielinux /p:Fumi0926 /cert:ignore /dynamic-resolution +clipboard`
 - Lanzador en Fumilinux: `~/.local/share/applications/torre1-rdp.desktop` (actualizar puerto)
 - **TRAMPA:** AnyDesk no funciona como host en Wayland
-- Remmina: perfil "Torre Linux" en Fumilinux actualizado a `100.67.216.43:3390` (2026-05-28)
-- Lanzador `.desktop` (`torre1-rdp.desktop`): usa xfreerdp, actualizado a puerto 3390 (2026-05-28). Si el ícono no abre nada tras editar el .desktop, reiniciar GNOME Shell: `Alt+F2 → r → Enter`
+- Remmina: perfil "Torre Linux" en Fumilinux actualizado a `100.67.216.43:3389` (verificado 2026-06-04)
+- Lanzador `.desktop` (`torre1-rdp.desktop`): usa xfreerdp, actualizado a puerto 3389 (2026-06-04). Si el ícono no abre nada tras editar el .desktop, reiniciar GNOME Shell: `Alt+F2 → r → Enter`
 
 **TRAMPA:** El usuario en Torre 1 es `kelsielinux`, no `kelsie`. Todos los paths son `/home/kelsielinux/`. Los servicios systemd y lanzadores .desktop fueron corregidos con sed al migrar.
 

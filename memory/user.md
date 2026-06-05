@@ -94,7 +94,7 @@ Cali · 2016 – 2021
 - ROCm 6.4 instalado, RX 570 detectada, `HSA_OVERRIDE_GFX_VERSION=9.0.0` activo
 - Stack completo: Claude Code, Docker CE + n8n, Ollama + llama3.2:3b, Wine, Steam, Blender, etc.
 - Tailscale activo — Torre 1: 100.67.216.43, Fumilinux: 100.116.50.47
-- Escritorio remoto: GNOME Remote Desktop RDP puerto **3390** (cambiado desde 3389 el 2026-05-28), Remmina desde Fumilinux (perfil "Torre Linux": `100.67.216.43:3390`)
+- Escritorio remoto: GNOME Remote Desktop RDP puerto **3389** (verificado 2026-06-04; la nota previa de "3390" era stale), Remmina desde Fumilinux (perfil "Torre Linux": `100.67.216.43:3389`)
 - Pendiente: rclone OAuth, n8n workflows, Vector venv
 
 **Torre 2:**
