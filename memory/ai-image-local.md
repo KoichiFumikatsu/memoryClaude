@@ -338,3 +338,20 @@ Para arreglar **anatomía rota** (manos fusionadas, orejas al revés, ojos defor
   - JS: `pubFlag` (toggle desde card), `markCardPublished(path,state)` (actualiza TODAS las cards con ese data-path — cubre el duplicado favs+grid que comparten path original), `pubFromCap`. `build_html` carga `pub_set=set(load_published())` una vez y lo pasa a `render_card` (como hires_set/overrides).
 
 **Validado**: `ast.parse` OK; ciclo toggle marcar/desmarcar probado en vivo (timestamp se guarda, desmarcar limpia el json); servicio reiniciado; HTML regenerado con todas las piezas. NOTA timing: tras reiniciar el servicio, el primer `build_html` hace varias llamadas SSH a Torre 1 (si está ocupada, ~tarda) → el HTML nuevo puede tardar 1-2 ciclos en aparecer; verificar por mtime del index.html, no inmediatamente.
+
+## Inpaint: por qué la 1ª prueba falló y fixes aplicados (2026-06-06)
+
+Prueba real: `gen-sonetto-reverse-1999/...seed31920.png` (manos fusionadas, pose reverse_fellatio upside-down). El inpaint salió con (a) manos AÚN mezcladas y (b) costura/parche visible del pincel. Diagnóstico con el log `/tmp/chain_inpaint_*.sh.out`:
+
+**Causa 1 (manos siguen mal) = PROMPT CONTAMINADO.** `run_inpaint` concatenaba `extra_pos + TODO el prompt embebido`. El prompt enviado al inpaint incluía toda la escena NSFW (`(large_penis:1.2), cum, fellatio, reverse_fellatio, after_sex…`). Al regenerar SOLO la zona enmascarada (las manos), el modelo intenta dibujar penes/cum AHÍ en vez de manos. El `Perfect Hands` inicial competía contra ~40 tags de sexo.
+**Causa 2 (costura) =** sd.cpp binariza la máscara con `round()` → borde duro, sin feather; y TODA la imagen pasa por el VAE (lossy) → hasta la zona "preservada" cambia de tono → escalón visible.
+**Causa de fondo:** la pose (reverse fellatio, upside-down, manos sujetando muslos) es de las más difíciles; las manos salen mal de origen y denoise 0.65 conserva la estructura rota.
+
+**Fixes aplicados:**
+1. **Prompt enfocado** (`run_inpaint`, dashboard.py): si das `extra_pos`, el prompt = `extra_pos + tag_personaje + calidad genérica`, SIN la escena. Extrae el personaje con `re.match(r"\s*(\([^,]*:[\d.]+\))", pos)` (1er tag con peso). Si NO das prompt extra, conserva el prompt completo (inpaint en-contexto). Highest impact.
+2. **Feather + composite con el ORIGINAL** (`inpaint.sh`, Torre 1, backup `inpaint.sh.bak-feather`): tras generar, el bloque python final ahora recibe `INIT_IMAGE`+`MASK_IMAGE` y hace `Image.composite(out, init, mask.GaussianBlur(r=W//100))`. Sólo la zona pintada + borde suave viene de lo regenerado; el resto queda pixel-perfect del original → mata la costura Y el drift del VAE.
+3. **Denoise default 0.65 → 0.75** (función + endpoint + UI input + label "0.75 rehace anatomía · borde difuminado auto"): con el feather protegiendo el borde, se puede subir denoise para rehacer anatomía sin costura.
+
+**Limitación pendiente (si 0.75+feather no basta):** sd.cpp NO hace "inpaint only-masked" (zoom a la región a full-res); inpaint sobre la imagen completa a 832x1216 → manos pequeñas = pocos píxeles. El siguiente lever sería recortar la bbox de la máscara con padding, escalar a alta res, inpaint, y pegar reescalado (estilo ADetailer/A1111 only-masked). NO implementado aún. Para poses extremas a veces es más rápido rerollar la seed que inpaint.
+
+**Validado**: dashboard AST OK; bash -n inpaint.sh OK; feather probado aislado con init+output reales (corrió, r=8px en 832px); servicio reiniciado. Falta reprueba end-to-end del usuario.
