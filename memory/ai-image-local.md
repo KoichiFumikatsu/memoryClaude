@@ -292,3 +292,17 @@ Añadido a `dashboard.py` (Fumilinux, servicio `iagen-dashboard.service`; tras e
 - **Selector batch**: toggle "☑ Seleccionar" en sort-bar → checkboxes por card + barra flotante (`#batch-bar`) con SFW/Sugerente/NSFW, ★Fav, 🔧Hires, ✕Eliminar, Todas visibles, Limpiar. Borrado por lote = endpoint `/api/delete_batch` (1 sola llamada SSH `rm -f` con `shlex.quote`). Rating/fav/hires = loop client-side sobre endpoints existentes. En modo selección el auto-reload se pausa.
 - **Mini-label por imagen**: badge SFW/SUGER/NSFW arriba-izq de cada card (reusa CSS `badge-*` y `image_rating()`); se actualiza en vivo al cambiar rating (modal o batch) vía `updateCardBadge()`.
 - **Prompt-en-ejecución: APLAZADO** (2026-06-05). sd-server NO loguea el prompt (solo steps). La opción robusta sería un sentinel `/tmp/iagen_current_prompt.json` escrito por `gen.sh` antes del curl (parche con backup `gen.sh.bak` en Torre 1, marker de inserción `}))")` tras el PAYLOAD). El usuario eligió omitirlo por ahora; si se retoma, esa es la vía.
+
+## Bug ruido azul: nombres de personaje con :número en el prompt (2026-06-05)
+
+**Síntoma**: imágenes 100% ruido azul/morado, PNG ~1.1MB (las sanas ~1.8MB). Afectó SOLO a `sonetto_(reverse:1999)` (falló 3/3 seeds distintas); el mismo personaje como `sonetto` (sin sufijo) salió perfecto. Otros 13 personajes esa noche, OK.
+
+**Causa REAL** (no era el VAE): el cajón arma `pos = f"({ch}:1.3), ..."` en `run_generate()` (dashboard.py ~L651). Con `ch="sonetto_(reverse:1999)"` el prompt queda `(sonetto_(reverse:1999):1.3)` → el parser de sd.cpp lee el paréntesis interno `(reverse:1999)` como token `reverse` con **peso 1999** → satura el conditioning → **NaN en el LATENTE** (antes del VAE) → el decoder escupe ruido. El juego se llama literalmente "Reverse:1999".
+
+**Diagnóstico A/B** (mismo seed 83992): sin escapar → ruido 1.1MB; con `\(reverse:1999\)` → figura limpia 1.75MB. Probado visualmente.
+
+**Fix aplicado**: en `run_generate()` escapar antes de envolver: `ch_esc = ch.replace("(", r"\(").replace(")", r"\)")` y usar `({ch_esc}:1.3)`. El `\(` sobrevive intacto Python→`_sh_q`→bash→gen.sh→JSON (no es comilla/$/backtick). Regla general: cualquier nombre con `:número` o paréntesis metido en un peso `(...:w)` envenena el prompt; SIEMPRE escapar `()` del nombre del personaje.
+
+**VAE-fp16-fix** (`--vae sdxl_vae_fp16_fix.safetensors` en launch.sh): se añadió persiguiendo este bug; NO era la causa, pero se DEJA puesto (mejora estabilidad SDXL en fp16 en general, +160MB VRAM, sin coste de RAM). launch.sh tiene backup `launch.sh.bak-20260605`. El VAE arranca en f32 (antes f16) y desaparece el WARN "No valid VAE specified".
+
+**Dato HW Torre 1** (Ryzen 5 5500, RX570 4GB): VAE-on-CPU descartado — RAM al límite (993MB libres, swap 100%, gnome-system-monitor fuga ~6GB); VRAM 3766/4096. El decode del VAE es solo ~80s de ~1195s/img (6.7%), no alivia la GPU.
