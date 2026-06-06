@@ -306,3 +306,21 @@ Añadido a `dashboard.py` (Fumilinux, servicio `iagen-dashboard.service`; tras e
 **VAE-fp16-fix** (`--vae sdxl_vae_fp16_fix.safetensors` en launch.sh): se añadió persiguiendo este bug; NO era la causa, pero se DEJA puesto (mejora estabilidad SDXL en fp16 en general, +160MB VRAM, sin coste de RAM). launch.sh tiene backup `launch.sh.bak-20260605`. El VAE arranca en f32 (antes f16) y desaparece el WARN "No valid VAE specified".
 
 **Dato HW Torre 1** (Ryzen 5 5500, RX570 4GB): VAE-on-CPU descartado — RAM al límite (993MB libres, swap 100%, gnome-system-monitor fuga ~6GB); VRAM 3766/4096. El decode del VAE es solo ~80s de ~1195s/img (6.7%), no alivia la GPU.
+
+## Inpaint manual en el dashboard (2026-06-06)
+
+Para arreglar **anatomía rota** (manos fusionadas, orejas al revés, ojos deformes) el hires-fix global NO sirve: a denoise bajo (0.40–0.55) preserva la composición y el defecto persiste; a denoise alto cambia cara/pose/likeness. La solución correcta es **inpaint localizado**: regenerar SOLO la región rota.
+
+**Verificado en el source de stable-diffusion.cpp** (`~/apps/sdcpp` en Torre 1):
+- El endpoint `/sdapi/v1/img2img` del sd-server YA soporta inpaint: acepta campo `mask` (base64) e `inpainting_mask_invert` (`routes_sdapi.cpp` L207). No hace falta CLI ni recargar modelo → reutiliza el server que ya corre (sin coste extra de VRAM).
+- **Convención de máscara** (core L2107): `denoised = denoised*mask + init*(1-mask)`. `assign_solid_mask` rellena 255 por defecto. ⇒ **BLANCO (255) = regenera, NEGRO (0) = preserva**. El server binariza con `round()`. Estándar A1111.
+
+**Implementado** (todo reutiliza patrones existentes):
+- Torre 1: `~/projects/ia-gen/scripts/inpaint.sh` = clon de `img2img.sh` con args `INIT MASK POS NEG`; mete `init_images`+`mask`+`inpainting_mask_invert:0` en el payload curl a `localhost:7860/sdapi/v1/img2img`. Default denoise 0.65, filename `*_inp_seed*`.
+- `dashboard.py`:
+  - `ssh_put_file(remote, bytes)`: sube binario a Torre 1 vía `base64 -d` por **stdin** del ssh (sin límite de ARG_MAX, más robusto que `echo '{b64}'`).
+  - `run_inpaint(path, mask_png, denoise, extra_pos)`: lee tamaño real con PIL, normaliza la máscara (→L, resize a WxH, binariza >128, valida `getbbox()` no vacía), la sube a `/tmp/iagen_mask_*.png` en Torre 1, lee prompt embebido (`png_prompt`) + prompt extra opcional, construye chain de 1 img con `inpaint.sh --size WxH`, mueve a `{stem}_inpaint.png`, borra la máscara, sync. Guard `chain_active()`.
+  - Endpoint `/api/inpaint_run` (JSON {path, mask dataURL, denoise, prompt}).
+  - Editor en el modal: botón `🎨 inpaint` → overlay `#inp-modal` con `<img>` de fondo + `<canvas>` encima (resolución = naturalWidth/Height; CSS opacity 0.5 para ver debajo). Pincel ajustable, denoise, prompt opcional. La máscara se exporta pintando los trazos blancos sobre un canvas negro temporal (`inpMaskDataURL`). El canvas NO dibuja la imagen file:// → no se contamina (toDataURL funciona). Guards: keydown Esc cierra, auto-reload pausado con `inpOpen()`.
+
+**Validado**: `ast.parse` OK, `bash -n inpaint.sh` OK, servicio reiniciado, HTML regenerado con el editor. Falta prueba end-to-end real (había chain activa → no se lanzó). El flujo de prueba: abrir imagen rota → modal → 🎨 inpaint → pintar la mano/oreja → Regenerar zona.
