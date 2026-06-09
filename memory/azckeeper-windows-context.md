@@ -10,8 +10,8 @@ Activadores de este archivo: **"AZCKeeper Updater"**, **"builder"**, **"build-re
 
 | Rama | Estado (2026-06-03 post-consolidación) | Notas |
 |---|---|---|
-| `origin/master` | f8aafa3 | Sin tocar — producción real está aquí |
-| `origin/DevLinux` | f0dac1c | **Branch general de integración** tras consolidación 2026-06-03. Restructura + updater + builder + web-blocking + install-coverage + build-release.sh + higiene gitignore |
+| `origin/master` | f8aafa3 | **ABANDONADO** (2026-06-09). NO es producción. Buildea updater roto (sin fix proxy `bdf8357`). No usar para builds. |
+| `origin/DevLinux` | 70c97a6 | **Branch principal y DEFAULT del repo en GitHub** (2026-06-09). Fuente de verdad. Prod corre builds de aquí (release activo 3.0.2.2). Restructura + updater (incl. `bdf8357` proxy bypass) + builder + web-blocking inerte + install-coverage + build `-p:Version` (`70c97a6`). WIP sin commitear: killer/install (`azc-killer.ps1` + `install.bat`) |
 | ~~`origin/feature/web-blocking`~~ | BORRADA 2026-06-03 | Sus 4 commits viven en DevLinux vía FF merge. Branch eliminada local y remoto |
 | `origin/desarrollo` | 1613059 | Rama HUÉRFANA del aprendiz Henao2007. NO mergear (regresiones — ver abajo) |
 | master local | 5072c2f | 3 commits adelante de origin/master (no pushed); apuntando al estado pre-consolidación |
