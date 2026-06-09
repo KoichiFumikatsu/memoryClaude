@@ -33,3 +33,29 @@ nunca termina → bash nunca sale → `pgrep 'chain_.*\.sh'` lo ve vivo etername
 **Regla general:** toda chain que lance un watchdog DEBE matarlo como último paso.
 **Finalizar una chain ya colgada:** matar el watchdog por PID vía `pgrep -f '[w]atchdog.sh'`
 (NUNCA `pkill -f` → se auto-mata el shell). El proceso de la chain sale solo.
+
+## Generador unificado (modal, 2026-06-08) — implementado y validado
+Los dos paneles (cajón + Velvet Forge en tabs) se unificaron en UN modal `#gen-modal` con
+selector de 3 modos. Al ser modal, `genOpen()` entra en la guarda de `scheduleReload()` → ya
+no se borran los tags al auto-refrescar. Modos:
+- **Cajón** (`run_generate`, INTACTO): N personajes × seeds, cada uno solo. Salida `gen-<slug>`.
+- **Sesión de personaje** (ex-Velvet Forge → `run_character_session` + `/api/character_session`,
+  usa forge.py): 1 personaje × varias composiciones (filas) × N seeds. Salida `gen-<slug>`.
+- **Escena grupal** (`run_group_scene` + `/api/group`): EXACTAMENTE 2 personajes en una
+  composición × seeds. Salida `gen-<slug1>-<slug2>`. Tope 2 (sd.cpp sin regional prompting).
+Los 3 con seeds (1-6, def 2) y steps (20-70, def 50). Spec/plan en docs/superpowers/ del proyecto.
+
+## BUG resuelto (2026-06-08): falso negativo "sin respuesta de Torre 1"
+Lanzar con Torre 1 idle devolvía "sin respuesta" aunque la chain arrancaba: el watchdog nuevo
+por SSH retenía el pipe stdout → timeout 25s → out vacío → leído como fallo. Fix en
+`b64_launch_remote` (~500-501): `>/dev/null 2>&1` en los `setsid` para soltar el pipe → SSH
+retorna LAUNCHED ya. La salida real sigue en /tmp/*.out.
+
+## Mapa de prompts NEGATIVOS (dónde editarlos)
+- Cajón + Grupal (`claude_build_prompt`): `dashboard.py:443` DEFAULT_NEG (principal); `:769`
+  añade nsfw/nude si rating!=nsfw; `:702-711` PROMPT_SYS (instrucción al LLM); `:771` grupal
+  quita 2girls/multiple girls.
+- Sesión (forge.py): `forge.py:34` SAFETY_NEG="bad hands" (hardcoded); `velvet/velvet.json` →
+  neg_safety(12), neg_base(13, principal), neg_solo_extra(14), bg_neg(20, fondos).
+- gen.sh vive en Torre 1; el negativo se pasa como arg desde la chain.
+- dashboard.py/forge.py → restart iagen-dashboard; velvet.json → sin restart.
