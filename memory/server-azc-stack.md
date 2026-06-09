@@ -85,3 +85,19 @@ Hestia 1.5+ migró del usuario `admin` a `hestiaweb` para el panel. Este server 
 ## Backups de cambios
 
 `/root/backups/pre-ip-migration-20260529-103254/` contiene snapshots de `/usr/local/hestia/data`, `/home/*/conf`, `/etc/nginx`, `/etc/apache2`, `/etc/exim4`, `/etc/dovecot`, `/etc/bind`, iptables, sudoers admin, ownership state. Para revertir cambios de la migración.
+
+## Login del panel daba 500 — /tmp roto (RESUELTO 2026-06-09)
+
+**Síntoma:** todo login al panel `:8083` daba HTTP 500 *tras* autenticar (el GET del form y el POST con credenciales malas daban 200; solo moría la rama de éxito). Igual por LAN que por internet.
+
+**Causa raíz:** `/tmp` con permisos/dueño corruptos: `0755 uid=501:staff` en vez de `1777 root:root`. `hestiaweb` (user php-fpm del panel) no podía escribir en `/tmp` → `exec('mktemp -p /tmp')` (`web/login/index.php:145`) devolvía `""` → `fopen('')` → `Uncaught ValueError: Path must not be empty` (fatal recién con **PHP 8.4.21**, actualizado después del 2026-05-29; antes era warning tolerado). Origen probable: la migración por `tar -xzf - -C /` pisó el ownership de /tmp.
+
+**Fix:** `chown root:root /tmp && chmod 1777 /tmp`. Verificado (login → 302 al panel). Afectaba a cualquier servicio que use /tmp, no solo Hestia. Si vuelve a aparecer un 500 raro tras updates, revisar `stat -c '%a %U:%G' /tmp` primero.
+
+## Panel Hestia expuesto a internet (2026-06-09)
+
+- URL pública: `https://186.145.239.174:8083`. El firewall del server **YA aceptaba 8083 desde 0.0.0.0/0** (`rules.conf` RULE 2 'HESTIA' → encadenada a fail2ban-HESTIA); lo único que faltaba era el **port-forward en el Omada Palmetto** (`8083 → 192.168.12.25:8083`).
+- **Gotcha CSRF** (`web/inc/prevent_csrf.php` línea 49): el login POST exige que el puerto del header Host == `SERVER_PORT` (8083) o 443. Un forward con **traducción de puerto** (ext 19083 → int 8083) rompe el login con "Potential use CSRF detected". Solución: forward sin traducir (8083→8083), o mover el panel con `v-change-sys-port`, o `v-change-sys-config-value POLICY_CSRF_STRICTNESS 0` (menos seguro). Actual `POLICY_CSRF_STRICTNESS=1`.
+- Cookie `HESTIASID` es **por-host, no por-puerto** → una sesión vieja de `:19083` se reenvía a `:8083` y puede dar 500/CSRF; usar incógnito al cambiar de puerto.
+- **2FA del panel SIN configurar** (pendiente, urgente al quedar en internet en puerto estándar). fail2ban-HESTIA (maxretry 5) + jaula recidive cubren fuerza bruta.
+- Menor: el panel sirve 404 a `inc/jquery/jquery-3.6.0.min.js` (cosmético, no rompe login).
