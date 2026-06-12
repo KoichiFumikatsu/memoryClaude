@@ -31,6 +31,22 @@ Cosecha por unión confiable en `/root/harvest/ts-20260612-164606/` (`union_harv
 - **Panel `cards.json` YA tiene las 352, todas con grupo** (mayoría en Empleados 0.5.11). 7 grupos: Admin 0.5.1, Retirados 0.5.2, Invitados 0.5.3, Directivos 0.5.8, CasoEspecial 0.5.9, ServGen 0.5.10, Empleados 0.5.11. → roster completo para gestionar permisos en el panel SIN tocar hardware.
 - **Regla uhppoted:** una tarjeta existe en una placa **solo si tiene ≥1 puerta concedida** ahí — NO hay estado "presente sin acceso" en hardware. Por eso los permisos van ANTES del push. Decisión de Koichi (2026-06-12): cargar todas y tratar permisos después → el roster del panel (352) ya lo permite; el push al hardware espera a que defina permisos + `compare-acl deleted:0` + revisar lectores entrada/salida compartidos (revocar ahí ENCIERRA).
 
+## httpd panel AUTO-SINCRONIZA a Palmetto (NO a Teq) — descubierto 2026-06-12
+
+**El panel httpd aplica los cambios de grupos/cards AUTOMÁTICAMENTE a los controladores que tiene en `controllers.json`** (cada refresh ~30s: logs `ACL <serial> ... / ACL compare`). Koichi editó el grupo **Empleados → todas las puertas**; como las 352 cards están en Empleados, **Palmetto quedó 352 × `Y Y Y Y`** (todos abren las 4 puertas) sin que nadie tocara publish. Time profiles sobrevivieron (Profile 2 intacto). Confirmó: "no hay problema si todos tienen todo".
+
+**CLAVE — split de gestión por Opción B:**
+- **Palmetto** está en `controllers.json` → el panel lo auto-sincroniza. Editar grupos en el panel = se aplica solo a Palmetto.
+- **Las 4 Teq NO están en `controllers.json`** (Opción B) → el panel **no las toca**. Quedaron con su acceso **variado real** (ej. .12: 161 cards `Y Y Y Y`, 26 restringidas; .125 `Y Y N N`). Por eso tras el cambio Palmetto=todos-todo y Teq=variado → **inconsistentes**.
+- **Gestionar/propagar acceso a Teq = vía publish/`load-acl` sobre Tailscale** (NO el panel). PERO el `api_publish`/`generate_acl_tsv` actual arma columnas de puerta desde `controllers.json` (solo Palmetto) → **el publish hoy NO incluye Teq**. Para centralizar de verdad hay que wirear el generador para incluir los 4 controladores Teq (desde conf + doors.json) aunque no estén en controllers.json. PENDIENTE.
+- **Lecturas get-cards sueltas sobre Tailscale = PARCIALES** (.125 leyó 20/352, .12 187/352). Para cualquier op real usar cosecha por unión, no lecturas sueltas.
+
+## Pestaña "Controladores" (visibilidad on-demand) — agregada 2026-06-12
+
+Resuelve "ver los controladores sin tiempo real": en vez de meterlos en controllers.json (starva Palmetto), pull **secuencial on-demand**. En `schedule-manager`:
+- `GET /api/controllers-status` (lee cache `/var/uhppoted/controllers-status.json`), `POST /api/controllers-refresh` (worker en background, daemon thread, recorre `CONTROLLERS_META` = las 5 placas 1×1 con reintentos warmup, escribe el cache incremental placa por placa). Independiente de httpd → no afecta Palmetto. Backup `schedule-manager.bak.controllers-*`.
+- UI: pestaña "Controladores" en `/schedules/index.html` (tabla nombre/serial/estado/IP/firmware/tarjetas/actualizado + botón "Actualizar (1×1)" que pollea status cada 2s hasta terminar). Backup `index.html.bak.controllers-*`. Verificado HTTP 200 vía nginx (192.168.12.25:443).
+
 ## Servicios systemd activos en el server
 
 - `uhppoted-httpd.service` — UI web, puertos **8543 HTTPS** y **8580 HTTP** (cambiados de 8443/8080 por conflicto con Apache de Hestia)
