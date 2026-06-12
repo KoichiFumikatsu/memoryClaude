@@ -7,6 +7,19 @@ type: project
 
 **MIGRADO al servidor central:** `azc.com.co` (LAN `192.168.12.25`, NAT `186.145.239.174`). Fumilinux (192.168.12.168) ya **NO** corre uhppoted — services stopped + disabled.
 
+## Tequendama: transporte migrado a Tailscale (2026-06-12) — REEMPLAZA uhppoted-tunnel
+
+**Motivo:** el relay `uhppoted-tunnel.exe` corría en consola en el mini PC Windows de Tequendama y **se cayó** → las 4 placas Teq quedaron incomunicadas (sin conexión en 60443, solo escaneos de bots). Se reemplazó el túnel por **Tailscale subnet routing**.
+
+- **Tailnet:** cuenta `techsupport@`. Nodos: `azc-doors-server` = `100.105.130.73` (server, tailscale 1.98.4), `DESKTOP-MF3LKIV` = `100.115.211.103` (mini PC Tequendama relay, LAN `192.168.12.209`).
+- **Server install:** apt global roto (keys nginx/anydesk + `co.archive.ubuntu.com` inalcanzable) → instalar dirigido solo del repo tailscale (`apt-get update -o Dir::Etc::sourcelist=sources.list.d/tailscale.list ...` luego `apt-get install -y tailscale`). `tailscale up --accept-routes`. **`tailscale set --accept-dns=false`** OBLIGATORIO (el server corre `named`/BIND9; Tailscale le pisaba el DNS).
+- **Subnet router (mini PC):** `tailscale up --advertise-routes=192.168.14.12/32,192.168.14.13/32,192.168.14.125/32,192.168.14.150/32` — solo los **4 /32** de las placas (quirúrgico: evita el solape `192.168.12.0/22` entre Palmetto y Tequendama, que son la MISMA subred). Rutas **aprobadas en consola**. En el server caen en `ip route show table 52` + `ip rule` 5270.
+- **`bind.address = 0.0.0.0` en `uhppoted.conf` — CRÍTICO:** con `192.168.12.25` (eno1) el source NO casa con la salida por `tailscale0` → **las 4 dan timeout**. Con `0.0.0.0` el kernel elige source por destino (IP tailscale para Teq, eno1 para Palmetto). Palmetto no se afecta.
+- **`.address` de las 4 placas en conf = IP real** (`192.168.14.13/.125/.150/.12`), ya NO `192.168.12.25:60010`. Backup `uhppoted.conf.bak.tailscale-20260612-145518`.
+- **Warmup persiste:** el path va por **DERP (relay Miami ~125ms)**, no directo → el cold-start tras idle **dropea los primeros paquetes**. Un `get-device` solo tras idle falla; **ráfaga** (varios paquetes rápidos) entra. `teq-keepalive.service` (15s) mantiene las 4 calientes. **Pendiente:** conexión **directa** Tailscale (abrir UDP 41641 en firewall del mini PC) eliminaría el warmup.
+- **Verificado 2026-06-12:** las 5 placas responden con conf de producción; poller drena backlog sobre Tailscale (cursores avanzan). `uhppoted-tunnel-tequendama.service` **stop + disable**. **Pendiente Koichi:** cerrar port-forward 60443 en Omada Palmetto.
+- **DESBLOQUEO arquitectónico:** con IPs reales distintas, el bloqueo de "Opción B" (httpd no podía demuxar 4 placas en 1 IP de túnel) **desaparece** → las 4 pueden volver a `controllers.json` para panel nativo en tiempo real, retirando poller/tab "Eventos Teq"/cursor_jump. NO hecho aún — próximo paso deliberado (cuidar warmup; idealmente con conexión directa primero).
+
 ## Servicios systemd activos en el server
 
 - `uhppoted-httpd.service` — UI web, puertos **8543 HTTPS** y **8580 HTTP** (cambiados de 8443/8080 por conflicto con Apache de Hestia)
