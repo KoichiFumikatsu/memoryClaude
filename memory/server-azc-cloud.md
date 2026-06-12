@@ -1,6 +1,6 @@
 ---
 name: reference_server_azc_cloud
-description: Server cloud.azclegal.com (185.42.22.239 / LAN 192.168.12.234) — Hestia Ubuntu 22.04 con 500 usuarios. Multi-WAN Omada ER707-M2 con trampa de policy routing.
+description: Server cloud.azclegal.com (185.42.22.239 / LAN 192.168.12.234) — el "servidor de nube" de AZC, hospeda Nextcloud (user nube:nube). Hestia Ubuntu 22.04, ~500 usuarios. Multi-WAN Omada ER707-M2 con trampa de policy routing.
 type: reference
 ---
 
@@ -25,6 +25,7 @@ type: reference
 - hestia (panel `:8083`)
 - exim4 (25/465/587), dovecot (110/143/993/995), vsftpd (21), BIND9 named (53), MariaDB (3306 local)
 - fail2ban con 7 jaulas (`ssh-iptables`, `dovecot-iptables`, `exim-iptables`, `hestia-iptables`, `phpmyadmin-auth`, `recidive`, `vsftpd-iptables`)
+- **Nextcloud** — este es el server que lo hospeda (confirmado por Koichi 2026-06-12). Es el "servidor de nube" de AZC. Regla crítica: corre como user **`nube:nube`**, NUNCA `chown -R www-data` (rompió el server una vez). **Pendiente verificar on-box**: ruta exacta del docroot, dominio (¿`nube.azc.com.co`? esa atribución venía mal-copiada del server `.25`), versión de Nextcloud y BD que usa. No asumir la ruta `/home/grupoazc/web/...` — era del `.25`.
 
 ## SSH
 

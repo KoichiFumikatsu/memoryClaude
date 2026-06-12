@@ -78,7 +78,7 @@ Hestia 1.5+ migró del usuario `admin` a `hestiaweb` para el panel. Este server 
 ## Reglas críticas (no romper)
 
 - **Postfix está `inactive` pero NO es problema** — exim4 es el MTA real
-- **Nextcloud usa user `nube:nube`** en `/home/grupoazc/web/nube.azc.com.co/` — nunca chown www-data
+- **Nextcloud NO corre en este server** — vive en el `.234` (`cloud.azclegal.com`), en otra red física. Este box es solo mail + uhppoted. La atribución previa de `nube.azc.com.co` / `/home/grupoazc/web/nube.azc.com.co/` a este server era **incorrecta** (corregido por Koichi 2026-06-12). La regla `nube:nube` (nunca `chown www-data`) aplica al server `.234`, no acá. Ver `reference_server_azc_cloud`.
 - IP del server fue `192.168.0.206` históricamente (NAT viejo `181.60.79.75`). Migrada a `192.168.12.25` (NAT `186.145.239.174`) el 2026-05-29 vía `v-add-sys-ip` + `v-change-web-domain-ip` por dominio + `v-delete-sys-ip 192.168.0.206`
 - Cola exim de 4228 mensajes frozen (cron locals → `noreply@azc.com.co`, `andres.zafra@azc.com.co`). Vaciar es seguro pero no urgente.
 
