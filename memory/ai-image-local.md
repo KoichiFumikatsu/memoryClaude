@@ -355,3 +355,32 @@ Prueba real: `gen-sonetto-reverse-1999/...seed31920.png` (manos fusionadas, pose
 **Limitación pendiente (si 0.75+feather no basta):** sd.cpp NO hace "inpaint only-masked" (zoom a la región a full-res); inpaint sobre la imagen completa a 832x1216 → manos pequeñas = pocos píxeles. El siguiente lever sería recortar la bbox de la máscara con padding, escalar a alta res, inpaint, y pegar reescalado (estilo ADetailer/A1111 only-masked). NO implementado aún. Para poses extremas a veces es más rápido rerollar la seed que inpaint.
 
 **Validado**: dashboard AST OK; bash -n inpaint.sh OK; feather probado aislado con init+output reales (corrió, r=8px en 832px); servicio reiniciado. Falta reprueba end-to-end del usuario.
+
+## Incidente degradación GPU + monitor persistente (2026-06-12)
+
+**Síntoma**: la RX570 empezó a generar a **~10 min/imagen** (en vez de ~20 normales) con **9/10 imágenes con anatomía rota** (piernas/manos fusionadas). El usuario sospechó un cambio de software.
+
+**Diagnóstico (granular, contra logs)**:
+- Causa = **estado degradado TRANSITORIO de la GPU**: `amdgpu: Fence fallback timer expired on ring comp_*` en `dmesg` (el compute ring se cuelga y el kernel lo recupera incompleto). NO fue hardware, NO ollama, NO térmica (71°C edge OK), NO un cambio de dashboard.
+- **El "2× más rápido" ERA el síntoma, no una mejora**: cómputo incompleto = menos trabajo real = menos tiempo de pared + salida corrupta. Misma falla que la anatomía rota.
+- **Calibración (corrige confusión)**: ~20 min/imagen (~21.7-22s/it × 50 steps, 832×1216, vae-tiling+fa) es **NORMAL** (ya estaba en [[project_dashboard-control-panel]] ⑤). ~10 min = firma de degradación. El log de timing real está en `/tmp/sdserver.log` (`generate_image completed in Xs`); el sd-server manual NO loguea a journald (solo el de systemd).
+- Timeline: las gen base fueron normales (18.6 min) hasta 04:39 del Jun 12 (incl. tanda nocturna completa POSTERIOR a los primeros fence timeouts de 23:11 → esos tempranos NO degradaron). El quiebre fue 04:39→11:19; el hires `chain_hires_080528` (08:05, 1024×1536) corrió 2× lento (33-35 min) y coincidió con el último fence timeout (09:01) → candidato a evento que dejó la GPU en mal estado.
+- **Curado por REBOOT** (estado de driver/GPU no se limpia con restart de sd-server, sí con reboot). Re-test post-reboot: vuelta a 1109.93s (~18.5 min) + imagen íntegra 1721 KB + dmesg limpio. RX570 sana; swap de GPU NO urgente.
+
+**ollama en Torre 1 = CPU-only** (`OLLAMA_VULKAN:false`, `library=cpu`, `total_vram=0 B`) — NO compite por la GPU. Igual se **deshabilitó** (`systemctl disable --now ollama`) junto con **easyeffects** (flatpak, autostart renombrado a `.disabled`) por pedido del usuario: no se usan en Torre 1, liberan ~250 MB y simplifican. Reversibles.
+
+**Monitor persistente NUEVO — `iagen-monitor.service`** (systemd --user en Torre 1, enabled + linger, sobrevive reboot). Script `~/projects/ia-gen/scripts/monitor.sh`. **Reemplaza al watchdog por-chain** (que NUNCA avisaba: solo escribía en crash/duplicado de sd-server; toda la clase de fallo —cuelgue, corrupción, degradación, tiempo anómalo— era invisible). Detecta y **auto-remedia**:
+- FENCE (nuevos amdgpu fence/ring/reset en dmesg), TIME (imagen fuera de ±40% del baseline 1100s = cómputo degradado), STALL (sdserver.log sin avance >240s con chain activa), CORRUPT (PNG <1200 KB), ORPHAN (GPU >50% sin chain = trabajo huérfano → libera), + guardián de 1 solo sd-server.
+- Remedio = reinicio limpio de sd-server (`switch-model.sh wai`). **Racha ≥2 fallos con chain activa → detiene la chain** (no malgastar horas en basura).
+- Escribe `/tmp/iagen-monitor-status.json` (lo lee el dashboard) + log estable `/tmp/iagen-monitor-watchdog.log`. Flag `IAGEN_DRY=1` = detecta sin remediar (pruebas). `dmesg` se lee SIN sudo en Torre 1.
+- Params env: `IAGEN_BASELINE` (1100s), `IAGEN_TIME_PCT` (40), `IAGEN_STALL_SECS` (240), `IAGEN_MINKB` (1200), `IAGEN_POLL` (30s).
+
+**Cambios dashboard.py asociados (Fumilinux, restart iagen-dashboard tras editar)**:
+- `watchdog_status()` ahora lee `iagen-monitor-status.json` (alerta visible si `state=alert`) en vez de grepear un log que casi nunca escribía.
+- `b64_launch_remote()` YA NO lanza watchdog por-chain (el monitor lo cubre). Los `kill [w]atchdog.sh` finales de las chains quedan como no-ops inofensivos (el monitor es `monitor.sh`, no matchea).
+- `run_hires()` añade **pre-flight**: antes de lanzar el hires (img2img 1024×1536, máxima presión de VRAM en 4GB) asegura sd-server en wai + idle; si hay huérfano/otro modelo → `switch-model.sh wai` (vacía VRAM/cache). El monitor vigila fence/stall durante el pase.
+- **Cajón: CFG editable** (input `g-cfg`, 1-20 paso 0.5, default 6.5 → payload `cfg` → `run_generate` valida y pasa a `--cfg`). Antes hardcodeado 6.5.
+
+**Para lanzar hires sin colgar** (regla): GPU sana verificada (dmesg sin fence + temp <50°C), aislado (no encadenado tras tanda larga, GPU fría, 1-3 imgs/pase), mantener `--vae-tiling --fa`, monitor on para abortar. Si aún tensiona, bajar a 896×1344. Fix de fondo = upgrade GPU (RTX 3060 12GB en [[hardware-3-torres]]).
+
+**Settings WAI v14 (revisado 2026-06-12)**: CFG 6.5 OK (rango Illustrious 4-7). **Steps 50 probablemente excesivo** — Illustrious converge ~28-30; la "meseta a 50" documentada solo comparó 50/55/60, nunca bajó. **Score tags vs masterpiece**: WAI es Illustrious-based (no Pony); los `score_9` pueden aportar poco vs el sistema nativo `masterpiece, best quality, amazing quality`. A/B de steps (30/40/50) y de tag-system pendiente de correr.
