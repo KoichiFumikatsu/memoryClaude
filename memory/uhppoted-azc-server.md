@@ -47,6 +47,18 @@ Resuelve "ver los controladores sin tiempo real": en vez de meterlos en controll
 - `GET /api/controllers-status` (lee cache `/var/uhppoted/controllers-status.json`), `POST /api/controllers-refresh` (worker en background, daemon thread, recorre `CONTROLLERS_META` = las 5 placas 1×1 con reintentos warmup, escribe el cache incremental placa por placa). Independiente de httpd → no afecta Palmetto. Backup `schedule-manager.bak.controllers-*`.
 - UI: pestaña "Controladores" en `/schedules/index.html` (tabla nombre/serial/estado/IP/firmware/tarjetas/actualizado + botón "Actualizar (1×1)" que pollea status cada 2s hasta terminar). Backup `index.html.bak.controllers-*`. Verificado HTTP 200 vía nginx (192.168.12.25:443).
 
+## Publish ACL board-by-board (self-service para IT) — 2026-06-12
+
+Se entrega a IT (no tendrán la cuenta de Koichi ni a Claude) → el publish debe ser un botón robusto, sin depender de nadie.
+
+- **`api_publish` reescrito a async secuencial placa-por-placa.** `POST /api/publish` (opcional `{controllers:[...]}`, default `PUBLISH_ORDER`=las 5, `.150` última) lanza un worker en background; `GET /api/publish-status` da progreso por placa. UI: pestaña "Publicar" → botón pollea cada 2s y muestra tabla por placa (en cola/publicando/OK/FALLÓ + `+add ~upd -del =igual` + reintentos). Backups `schedule-manager.bak.pubseq-*`, `index.html.bak.pubseq-*`.
+- **Por qué placa-por-placa:** `compare-acl`/`load-acl` golpean TODAS las placas concurrente → timeout en bloque sobre Tailscale (igual que httpd). Worker usa **conf aislado por controlador** (`_isolated_conf`: filtra `uhppoted.conf` a solo las líneas `UT0311-L0x.<serial>.*` — ojo: hay que filtrar TODAS, no solo `.address`, porque compare/load enumeran controladores por las **door-labels** del conf) + **TSV cortado** a sus columnas (`generate_acl_tsv(only_serial=...)`).
+- **PINs (CRÍTICO):** Teq usa PIN; `load-acl`/`compare-acl` necesitan `--with-pin` (flag DESPUÉS del subcomando) o borran PINs. Mapa en `/etc/uhppoted/card-pins.json` (112 cards, cosechado por unión, mayoría `345678`). TSV con PIN = `Card,PIN,From,To,doors`. `generate_acl_tsv` lo emite. Las 240 de Palmetto son card-only (sin PIN).
+- **Generador incluye Teq sin meterlas en controllers.json:** `/etc/uhppoted/acl-extra-controllers.json` (4 Teq con door-mappings 0.3.5-0.3.16) merge en `_controllers()`. Así el TSV tiene las 16 columnas pero httpd no las pollea (no starva Palmetto).
+- **Bulk get-acl/load-acl sobre Tailscale = todo-o-nada:** si UN paquete de los 352 reads se cae, falla toda la operación. Por eso reintentos (`PUBLISH_RETRIES`: default 3, `.150`=8, `.13`/`.12`=12). **El `teq-keepalive` CONTIENDE con el bulk** (pinguea la misma placa que se está leyendo) → el worker **pausa `teq-keepalive` durante el publish y lo reanuda al final** (`systemctl stop/start`). Con el keepalive parado, `.12`/`.13` entraron en intento 1. Detección de éxito: NO confundir `errors:0` del summary con error real (chequear `i/o timeout` / `error: [`).
+- **ESTADO FINAL 2026-06-12:** las **5 placas = 352 tarjetas, todas `Y` en todas sus puertas** (Teq igual que Palmetto, decisión de Koichi "todos tienen todo"). Empleados (0.5.11) concede las 16 puertas; las 352 están en Empleados. `compare-acl` previo: extraneous(delete)=0 en todas → nadie perdió acceso.
+- Tooling manual: `/root/acl_seq2.sh compare|load <tsv>`, `/var/uhppoted/acl/candidate.tsv`, `/tmp/conf-per-ctrl/`, `/var/uhppoted/per-ctrl-conf/`.
+
 ## Servicios systemd activos en el server
 
 - `uhppoted-httpd.service` — UI web, puertos **8543 HTTPS** y **8580 HTTP** (cambiados de 8443/8080 por conflicto con Apache de Hestia)
