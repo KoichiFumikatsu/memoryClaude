@@ -45,11 +45,24 @@ no se borran los tags al auto-refrescar. Modos:
   composición × seeds. Salida `gen-<slug1>-<slug2>`. Tope 2 (sd.cpp sin regional prompting).
 Los 3 con seeds (1-6, def 2) y steps (20-70, def 50). Spec/plan en docs/superpowers/ del proyecto.
 
-## BUG resuelto (2026-06-08): falso negativo "sin respuesta de Torre 1"
-Lanzar con Torre 1 idle devolvía "sin respuesta" aunque la chain arrancaba: el watchdog nuevo
-por SSH retenía el pipe stdout → timeout 25s → out vacío → leído como fallo. Fix en
-`b64_launch_remote` (~500-501): `>/dev/null 2>&1` en los `setsid` para soltar el pipe → SSH
-retorna LAUNCHED ya. La salida real sigue en /tmp/*.out.
+## BUG falso negativo "sin respuesta de Torre 1" — fix REAL (2026-06-14)
+Síntoma: al lanzar una chain, el dashboard mostraba "✗ sin respuesta de Torre 1" pero la chain
+SÍ arrancaba en Torre 1. El usuario lo interpretaba como "Torre 1 caída". Al reintentar →
+"Torre 1 ocupada" (porque la primera SÍ corría). El intento 2026-06-08 (`>/dev/null 2>&1` en
+setsid) NO bastó: el `setsid ... & disown` seguía dejando el proceso de la chain reteniendo el
+canal SSH → `ssh_run` llegaba a su timeout 25s → descartaba el stdout → out vacío → falso fallo.
+Verificado midiendo: el lanzador con `& disown` hacía que el SSH retornara recién a los 25s.
+**Fix real (b64_launch_remote):** patrón fire-and-forget con SUBSHELL — `( ( setsid bash -c
+'nohup REMOTE >/tmp/N.out 2>&1' </dev/null >/dev/null 2>&1 & ) ; echo LAUNCHED )`. El `( cmd & )`
+backgroundea y el subshell sale al instante → SSH retorna en ~1s con LAUNCHED y la chain corre.
+`echo LAUNCHED` va dentro del `&&` de `bash -n` (sin falso positivo en error de sintaxis;
+`SYNTAX_ERR` se reporta). Timeout bajado a 20s. b64_launch_remote es el ÚNICO punto de
+lanzamiento (5 callers: cajón/sesión/grupal/hires/img2img) → arregla los 3 modos.
+**Heurística para el usuario:** error rojo a ~5s = `ConnectTimeout=5`, SSH NO conectó (fallo real,
+no lanzó, reintentar); error a ~25s = falso-negativo viejo (ya no debería ocurrir tras el fix).
+Efecto secundario del bug viejo: cada lanzamiento colgado dejaba una conexión SSH abierta 25s y,
+sumadas al loop del dashboard (~20 SSH/8s), saturaban por ratos el sshd de Torre 1 → parpadeos de
+conexión de 5s. El fix también elimina esa acumulación.
 
 ## Mapa de prompts NEGATIVOS (dónde editarlos)
 - Cajón + Grupal (`claude_build_prompt`): `dashboard.py:443` DEFAULT_NEG (principal); `:769`
