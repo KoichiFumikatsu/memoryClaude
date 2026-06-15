@@ -45,7 +45,19 @@ no se borran los tags al auto-refrescar. Modos:
   composición × seeds. Salida `gen-<slug1>-<slug2>`. Tope 2 (sd.cpp sin regional prompting).
 Los 3 con seeds (1-6, def 2) y steps (20-70, def 50). Spec/plan en docs/superpowers/ del proyecto.
 
-## BUG falso negativo "sin respuesta de Torre 1" — fix REAL (2026-06-14)
+## BUG "sin respuesta de Torre 1" — CAUSA RAÍZ: ARG_MAX (2026-06-14)
+**Bloqueo real del usuario:** chains grandes (varios chars×seeds o composición larga) fallaban
+SIEMPRE con "✗ sin respuesta de Torre 1". `b64_launch_remote` metía el script base64 en el ARGV de
+ssh (`echo '<b64>' | base64 -d`); si el base64 pasa ~128KB (MAX_ARG_STRLEN), el subprocess revienta
+al exec con `OSError [Errno 7] Argument list too long: 'ssh'`, ssh_run lo tragaba y devolvía "" ->
+falso "sin respuesta de Torre 1". NO era Torre 1, ni SSH, ni Claude (el usuario sospechó de Claude;
+una prueba real usó Claude OK). Scripts chicos no lo disparaban.
+**Fix:** base64 POR STDIN (`subprocess.run(..., input=b)` + `base64 -d` remoto), no en argv. Sin
+límite ARG_MAX. Verificado: script 207KB -> viejo=Errno7, nuevo=LAUNCHED 0.9s. Diagnóstico: se
+instrumentó el mensaje rojo con rc/stderr/tiempo (`[rc=EXC 0s: Errno 7]`) -> rc=EXC+0s=ARG_MAX,
+rc=255+5s=ConnectTimeout.
+
+### (mismo fix) falso negativo por canal SSH colgado
 Síntoma: al lanzar una chain, el dashboard mostraba "✗ sin respuesta de Torre 1" pero la chain
 SÍ arrancaba en Torre 1. El usuario lo interpretaba como "Torre 1 caída". Al reintentar →
 "Torre 1 ocupada" (porque la primera SÍ corría). El intento 2026-06-08 (`>/dev/null 2>&1` en
