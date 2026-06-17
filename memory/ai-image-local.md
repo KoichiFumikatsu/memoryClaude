@@ -383,6 +383,15 @@ Prueba real: `gen-sonetto-reverse-1999/...seed31920.png` (manos fusionadas, pose
 
 **Para lanzar hires sin colgar** (regla): GPU sana verificada (dmesg sin fence + temp <50°C), aislado (no encadenado tras tanda larga, GPU fría, 1-3 imgs/pase), mantener `--vae-tiling --fa`, monitor on para abortar. Si aún tensiona, bajar a 896×1344. Fix de fondo = upgrade GPU (RTX 3060 12GB en [[hardware-3-torres]]).
 
+## Dashboard: http multi-dispositivo + descriptor + miniaturas/PWA + Tailscale (2026-06-16)
+
+Sesión grande sobre `dashboard.py` (Fumilinux, restart `iagen-dashboard` tras editar). Detalle completo en la auto-memoria `project_dashboard-control-panel` ⑭-⑯; resumen:
+
+- **Servido por HTTP además de `file://`**: el `ActionHandler` ganó `do_GET` → `http://localhost:8769/`. `GET /` reescribe al vuelo el `file://{PICTURES_BASE}/` del HTML → `/thumb/`; `/media/<rel>` sirve full-res (modal/firmar/inpaint). El `index.html` en disco no se toca → `file://` sigue de fallback. **Gotchas resueltos:** `const API` ahora relativo al origen (era `localhost` hardcodeado → fallaba desde otro dispositivo); helper `fileURL()` para el único `window.open('file://…')` (firmar) que el navegador bloquea bajo http.
+- **Descriptor de imagen 🖼️** (`/api/describe_image`, modelo env `DESCRIBE_MODEL` default `claude-sonnet-4-6` ~1.1¢/img): subir/pegar/URL → Claude visión → JSON {description ES, composition tags Danbooru EN, guión bajo}. Server reescala a 1568px (evita límite 5 MB de la API).
+- **Miniaturas WebP** (`/thumb/`, `get_thumb()` PIL, cache en `_dashboard/_thumbs/`): ~23 KB vs 1.74 MB = **78× menos** (690 imgs eran 1.16 GB). Grid usa thumb, full-res solo en modal. **PWA** instalable: `/manifest.webmanifest`, `/sw.js` (service worker cache-first solo imágenes), íconos generados. **Responsive**: faltaba `<meta viewport>` (el arreglo #1) + `@media` ≤820/≤520px (galería 2 col, botones tappables, formularios apilados). Verificado con agent-browser a viewport móvil.
+- **Acceso por Tailscale (tablet)**: `http://fumilinux.tail7024a4.ts.net:8769/` (hostname MagicDNS, NO IP). `tailscale serve --bg --http=8769 8769` (la cuenta NO soporta certs TLS → HTTPS imposible; igual va cifrado por WireGuard, tailnet-only). `operator=kelsie`. **Nextcloud snap retirado** (ocupaba puerto 80, 12K de datos, snapshot guardado). Ver [[reference_tailscale-dashboard-access]].
+
 **Settings WAI v14 — A/B RESUELTO (2026-06-12)**: corrido maomao, 832×1216, score-vs-quality × steps 30/40/50 × 2 seeds.
 - **Steps: SIN diferencia visible** 30/40/50. El usuario los seguirá ajustando él en pruebas largas; quedan **movibles** en el cajón (`g-steps` 20-70) igual que CFG (`g-cfg`).
 - **Tag-system: DECIDIDO = sistema nativo Illustrious, score tags ELIMINADOS.** Los `score_9/8/7` salían **planos**; `masterpiece, best quality, amazing quality, very aesthetic` salían más stylish/lindos. WAI es Illustrious-based (NO Pony), confirmado empíricamente.
