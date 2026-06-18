@@ -8,6 +8,13 @@
 > - **Conversación con Henao2007: CERRADA** (ya realizada).
 > - Infra aún abierta: 2FA del panel HestiaCP `:8083`; `datadirectory` de Nextcloud dentro de `public_html`.
 > - Producto vivo pendiente: contramedidas anti-VPN (Urban VPN) — el PAC no bloquea VPNs; plan = blocklist de extensiones de navegador por política (HKCU, sin admin) + detección/reporte. Sin implementar.
+>
+> **Acceso backend/BD (verificado 2026-06-18):**
+> - **BD keeper alcanzable DIRECTO desde Fumilinux** (PDO): host `mysql.server1872.mylogin.co`, db/user `pipezafra_keep`. MySQL 8.0.40. La IP de Fumilinux está permitida. Legacy empleados: misma host, db `pipezafra_soporte_db` (tabla `employee`). Credenciales en `/home/kelsie/Documents/AZCKeeper_DESACTUALIZADO_NO_USAR/AZCKeeper_Client/Web/.env` (el código de esa carpeta es viejo, pero las credenciales sirven). NO hay `.env` real en el repo.
+> - **SSH al hosting:** `ssh.server1872.mylogin.co:2222` user `pipezafra` (cPanel/shared, MariaDB client local). Requiere `sshpass`.
+> - **Deploy del panel = subida MANUAL** (no git en el server). Docroots en `~/www/`: **`keep.azclegal.com` (PROD)**, `devkeep.azclegal.com` (dev, vacío), `keepertest.azclegal.com` (test, vacío). Estructura desplegada = `public/` + `src/` (el contenido de `AZCKeeper_Client/Web/`, no el repo completo).
+> - **REGLA (usuario):** en `keep.azclegal.com` SIEMPRE respaldar la versión actual ANTES de actualizar/subir cambios.
+> - Diagnóstico panel 2026-06-18: #1 correo → 15 usuarios activos muestran personal (gmail/hotmail/outlook); fix = backfill a `employee.mail`. #2 retiro vive en `employee.role` enum ('retirado'), NO en `exit_status` (todo 0); 14 keeper-activos son `retirado`. #3 de 251 devices activos, 51 con last_seen >30d (nadie revoca); 39 users con >1 device.
 
 Hasta 2026-05-28 el updater y el pipeline de build vivían fuera de git en `/home/kelsie/Documents/AZCKeeper/`. En esta fecha se restructuró el repo a layout sln-at-root y se incorporaron al control de versiones. El repo `KoichiFumikatsu/AZCKeeper` es ahora autosuficiente para reconstruir un release end-to-end.
 
