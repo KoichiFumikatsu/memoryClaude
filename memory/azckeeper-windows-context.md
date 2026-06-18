@@ -1,5 +1,14 @@
 # AZCKeeper — Updater + builder (RESUELTO 2026-05-28)
 
+> **ACTUALIZACIÓN 2026-06-18 — varias secciones de abajo quedaron OBSOLETAS:**
+> - **`master` reconciliado y vuelve a ser DEFAULT.** `origin/master` era ancestro directo de `DevLinux` (sin divergencia; el temido "problema de carpetas" de la reestructura sln-at-root resultó infundado). Fast-forward limpio `f8aafa3 → 2950942`. Ahora `origin/master == origin/DevLinux == 2950942` y el default de GitHub volvió a **master**. Prod corre desde master.
+> - **Web blocking EN PRODUCCIÓN**, reescrito a **PAC per-usuario** (AutoConfigURL en HKCU, sin admin). El proxy de sistema global + hosts rompía Teams/Office de escritorio y páginas gov; el PAC enruta al proxy local SOLO los dominios bloqueados (resto DIRECT, soporta wildcards). Commit `4b8769e`. Releases **3.0.2.3 / 3.0.2.4** publicadas en GitHub y auto-update verificado (3.0.2.3 OK).
+> - **`.vs/` removido del índice** (92 archivos) + regla en `.gitignore`. `.csproj.user` ya estaba limpio.
+> - **Hallazgo [E] (hash/firma del ZIP en updater): DESCARTADO** — el cliente decidió que no se necesita.
+> - **Conversación con Henao2007: CERRADA** (ya realizada).
+> - Infra aún abierta: 2FA del panel HestiaCP `:8083`; `datadirectory` de Nextcloud dentro de `public_html`.
+> - Producto vivo pendiente: contramedidas anti-VPN (Urban VPN) — el PAC no bloquea VPNs; plan = blocklist de extensiones de navegador por política (HKCU, sin admin) + detección/reporte. Sin implementar.
+
 Hasta 2026-05-28 el updater y el pipeline de build vivían fuera de git en `/home/kelsie/Documents/AZCKeeper/`. En esta fecha se restructuró el repo a layout sln-at-root y se incorporaron al control de versiones. El repo `KoichiFumikatsu/AZCKeeper` es ahora autosuficiente para reconstruir un release end-to-end.
 
 Activadores de este archivo: **"AZCKeeper Updater"**, **"builder"**, **"build-release"**, **"install.bat"**, **"hallazgo E"** (ZIP sin firma), **"feature web blocking"**, **"DevLinux"**, **"Henao2007"**, **"desarrollo branch"**.
@@ -10,7 +19,7 @@ Activadores de este archivo: **"AZCKeeper Updater"**, **"builder"**, **"build-re
 
 | Rama | Estado (2026-06-03 post-consolidación) | Notas |
 |---|---|---|
-| `origin/master` | f8aafa3 | **ABANDONADO** (2026-06-09). NO es producción. Buildea updater roto (sin fix proxy `bdf8357`). No usar para builds. |
+| `origin/master` | ~~f8aafa3 ABANDONADO~~ → **2950942 (2026-06-18)** | **REACTIVADO Y DEFAULT.** Fast-forward limpio desde DevLinux. Vuelve a ser producción. (Lo de abajo aplicaba antes del 2026-06-18.) |
 | `origin/DevLinux` | 70c97a6 | **Branch principal y DEFAULT del repo en GitHub** (2026-06-09). Fuente de verdad. Prod corre builds de aquí (release activo 3.0.2.2). Restructura + updater (incl. `bdf8357` proxy bypass) + builder + web-blocking inerte + install-coverage + build `-p:Version` (`70c97a6`). WIP sin commitear: killer/install (`azc-killer.ps1` + `install.bat`) |
 | ~~`origin/feature/web-blocking`~~ | BORRADA 2026-06-03 | Sus 4 commits viven en DevLinux vía FF merge. Branch eliminada local y remoto |
 | `origin/desarrollo` | 1613059 | Rama HUÉRFANA del aprendiz Henao2007. NO mergear (regresiones — ver abajo) |
