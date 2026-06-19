@@ -412,6 +412,15 @@ Detalle en `project_dashboard-control-panel` ⑱.
 - **HTML no-cache** (`Cache-Control: no-store` en GET /): arregló "biblioteca vacía en la tablet" — era HTML viejo cacheado por el navegador, NO la biblioteca (siempre fue server-side). `libLoad` ahora avisa errores.
 - Costo Claude visión por fix: **~0.25¢ (haiku)** / ~0.7¢ (sonnet). Presupuesto usuario <$5/mes → sobra.
 
+## Dashboard + Torre: editar biblioteca, reinicio, monitor visible, sync, apagón (2026-06-19)
+
+Detalle en `project_dashboard-control-panel` ⑲ y `project_gpu-degradation-monitor`.
+
+- **Biblioteca editable** (✏️ inline personajes y prompts). **Sync galería entre dispositivos:** borrar/mover desde la tablet no se reflejaba en la PC (el auto-reload solo disparaba si el conteo SUBÍA) → fix con **`gallery_sig`** (hash grupos+nombres) en `/api/status`; recarga al agregar/borrar/mover desde cualquier dispositivo.
+- **Botón ⏻ Reiniciar Torre** en el dashboard (`/api/reboot_torre` → ssh sudo reboot) para limpiar GPU degradada. **Monitor ahora VISIBLE** (sticky): muestra la última intervención del monitor hasta 12h después (antes el alert duraba 1 ciclo y se perdía).
+- **Apagón 06-18 (~15:47, ~53min, corte abrupto)** → GPU degradada otra vez → el monitor detuvo las chains de hires (por eso "no salía nada"). **Reboot 06-19 la curó** (reconfirma: SOLO reboot, no restart de sd-server). PENDIENTE: BIOS **`AC BACK=Always On`** (Gigabyte B450M DS3H V2) para auto-encendido tras apagón (Linux no puede, es firmware).
+- **Gotcha recurrente (cazado 3× con `node --check`):** escapes `\'`/`\n` dentro del string JS `desc_js` (Python `"""`) rompen el `<script>` entero → validar el JS servido con node tras editar.
+
 **Settings WAI v14 — A/B RESUELTO (2026-06-12)**: corrido maomao, 832×1216, score-vs-quality × steps 30/40/50 × 2 seeds.
 - **Steps: SIN diferencia visible** 30/40/50. El usuario los seguirá ajustando él en pruebas largas; quedan **movibles** en el cajón (`g-steps` 20-70) igual que CFG (`g-cfg`).
 - **Tag-system: DECIDIDO = sistema nativo Illustrious, score tags ELIMINADOS.** Los `score_9/8/7` salían **planos**; `masterpiece, best quality, amazing quality, very aesthetic` salían más stylish/lindos. WAI es Illustrious-based (NO Pony), confirmado empíricamente.
