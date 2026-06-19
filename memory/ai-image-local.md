@@ -401,6 +401,17 @@ Continuación. Detalle en `project_dashboard-control-panel` ⑰. Resumen:
 - **🔧 Hires-fix REPURPOSADO → ↻ Relanzar (reroll):** re-genera la imagen marcada por **txt2img con seed nueva** (mismo prompt+params del metadata vía `png_params`, **quitando score tags**) → otra tirada de anatomía. Sale a `<grupo>-reroll/`. Chequea `chain_active()` (no sobremonta). El hires img2img salió de la UI (sigue siendo válido pero no arregla anatomía rota → para eso reroll/inpaint). Ver [[reference_hires-fix-viable]].
 - **Visor (modal):** rediseñado a columna → **los botones ya no tapan la imagen**; **zoom+pan** (rueda/doble-click escritorio, pinch/un-dedo/doble-tap tablet, hasta 8x, reset al cambiar). Botón flotante ↑ subir. `rateImage` endurecido (fallo de UI ya no se ve como error de guardado).
 
+## Dashboard: hires-fix correctivo restaurado + buscador (2026-06-18)
+
+Detalle en `project_dashboard-control-panel` ⑱.
+
+- **Hires-fix VOLVIÓ a la UI conviviendo con Relanzar** (corrige lo del 06-17): ↻ Relanzar (reroll txt2img, anatomía ROTA) Y 🔧 Hires-fix (img2img correctivo, detalle/borroso/deformidad LEVE), cada uno con su cola/tab/botón en el visor.
+- **🔧 hires por imagen (en el visor):** checkboxes manos/dedos/cara/ojos/orejas/borroso/**✨embellecer** (mapa `HFIX_TAGS`; embellecer = sombras/luz/detalle) + texto opcional + toggle **👁️ Claude** (`HFIX_MODEL` default haiku ~0.25¢, MIRA la imagen → tags correctivos) + denoise 0.30-0.65. Cola propia `hiresfix_queue.json`, `run_hiresfix` img2img, endpoints `/api/hfix_*`. Respeta `chain_active()`.
+- **Ambos (reroll y hires) ahora a la MISMA carpeta del personaje** (sufijo `_reroll`/`_hires`, no carpetas aparte → como recortes; evita proliferar carpetas).
+- **🔍 Buscador de galería** (`#gallery-search`): filtra por substring de carpeta/personaje, convive con filtro de rating.
+- **HTML no-cache** (`Cache-Control: no-store` en GET /): arregló "biblioteca vacía en la tablet" — era HTML viejo cacheado por el navegador, NO la biblioteca (siempre fue server-side). `libLoad` ahora avisa errores.
+- Costo Claude visión por fix: **~0.25¢ (haiku)** / ~0.7¢ (sonnet). Presupuesto usuario <$5/mes → sobra.
+
 **Settings WAI v14 — A/B RESUELTO (2026-06-12)**: corrido maomao, 832×1216, score-vs-quality × steps 30/40/50 × 2 seeds.
 - **Steps: SIN diferencia visible** 30/40/50. El usuario los seguirá ajustando él en pruebas largas; quedan **movibles** en el cajón (`g-steps` 20-70) igual que CFG (`g-cfg`).
 - **Tag-system: DECIDIDO = sistema nativo Illustrious, score tags ELIMINADOS.** Los `score_9/8/7` salían **planos**; `masterpiece, best quality, amazing quality, very aesthetic` salían más stylish/lindos. WAI es Illustrious-based (NO Pony), confirmado empíricamente.
