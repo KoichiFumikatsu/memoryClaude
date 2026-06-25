@@ -47,6 +47,11 @@ Si el contexto involucra instalar Linux en Torre 1 o replicar el entorno de Fumi
 Si el contexto involucra la marca pública Kelsie TL (identidad visual, redes sociales, web, releases), leer:
 - [memory/kelsietl-brand.md](memory/kelsietl-brand.md) — sistema visual completo, assets Figma, estado del proyecto, decisiones tomadas
 
+## dashlife — Finanzas personales
+
+Si la sesión involucra dashlife (PWA de finanzas, cwd `/home/kelsie/projects/dashlife`, o se menciona el cuadre de extracto / cobros fijos / KPIs), leer:
+- [memory/project_dashlife.md](memory/project_dashlife.md) — Rebuild de KelsieApp (Fase 1 finanzas). SvelteKit+SQLite+Drizzle+Claude Haiku+ntfy, self-host Fumilinux/Tailscale :8443. Despliegue systemd, cuadre de extracto (CSV/foto Nu vía Claude visión), KPIs explicativos, cobro fijo=pago de tarjeta con aviso un día antes, offline outbox. Trampas: BODY_SIZE_LIMIT=15M, COP usa "." de miles en Claude visión, each-key duplicado rompe la lista.
+
 ## Memorias específicas por proyecto/refactor
 
 Cuando un proyecto tiene un refactor mayor, decisiones arquitectónicas extensas o documentación de un flujo completo que excede `decisions.md`, crear un archivo dedicado `<proyecto>-<tema>.md` en `memory/` y enlazarlo aquí. Reglas:
