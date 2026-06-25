@@ -1,6 +1,6 @@
 ---
 name: reference_server_azc_cloud
-description: Server cloud.azclegal.com (185.42.22.239 / LAN 192.168.12.234) — el "servidor de nube" de AZC, hospeda Nextcloud (user nube:nube). Hestia Ubuntu 22.04, ~500 usuarios. Multi-WAN Omada ER707-M2 con trampa de policy routing.
+description: Server cloud.azclegal.com (185.42.22.239 / LAN 192.168.12.234) — el "servidor de nube" de AZC, hospeda Nextcloud (user nube:nube). Hestia Ubuntu 22.04, ~500 usuarios. Router TP-Link ER707-M2. Dos trampas de red documentadas: policy routing multi-WAN, y IP-MAC binding equivocado del .234 (público muerto pero LAN OK).
 type: reference
 ---
 
@@ -69,6 +69,25 @@ Si da otra IP, el policy está roto o desactivado → usuarios externos NO entra
 ## Trampa secundaria: sesiones cacheadas en Omada
 
 Cambios de policy routing o Load Balancing NO se aplican a sesiones existentes. Tras cambios, hacer **reboot del ER707-M2** (1-2 min downtime) para limpiar conntrack. Sin reboot, el síntoma es que la mitad de los puertos funcionan y la otra mitad no, por puerto+source-IP hash.
+
+## Trampa terciaria: IP-MAC binding equivocado del .234 en el router (incidente 2026-06-25)
+
+**Síntoma**: `mi.azclegal.com` + SSH/HTTPS público muertos desde TODOS lados (LAN remota, datos móviles, torre1) — timeout en 22/80/443, sin banner. DNS OK (`mi.azclegal.com`→`185.42.22.239`). El **acceso LAN directo al `.234` SÍ funcionaba** (SSH, Hestia `:8083`, nginx `:443`→301). Reboot del server, mover cable a varios puertos, cambiar cable: **SIN efecto**. Solo había **1 WAN activa** → NO era la trampa de policy routing de arriba.
+
+**Causa raíz (prueba con tcpdump en el server)**: el gateway `.1` recibe el ping/forward para `192.168.12.234` y genera la respuesta, pero la entrega a la **MAC equivocada `70:8b:cd:a4:08:d9` (ASUSTek)** en vez de la MAC real. El router tiene un **IP-MAC Binding / ARP fijo viejo** de `.234`→MAC-ASUS, así que el server Dell real nunca recibe el tráfico ruteado (internet + port-forwards entrantes) → IP pública oscura. Host-a-host en el mismo segmento sí va porque resuelven ARP directo con la MAC correcta (por eso Fumilinux `.2` llega y el público no).
+- **MAC REAL del server** (`.234`, `enp0s25`, **Dell**): `d8:9e:f3:3c:37:df` ← la que va en cualquier reservación/binding.
+- **MAC intrusa que usa el router**: `70:8b:cd:a4:08:d9` (ASUSTek; NO estaba en este segmento → entrada fantasma/estática en el router).
+- **Por qué no aparece en DHCP**: el server es **IP estática** (`/etc/netplan/01-static.yaml`, `dhcp4:no`) → nunca pide lease → nunca sale en la lista de clientes DHCP (por eso el user no podía crear la reservation).
+
+**Fix**: en el ER707-M2 → **IP-MAC Binding / ARP List** (NO el Address Reservation de DHCP) → corregir/borrar la entrada de `192.168.12.234` que apunta a `70:8b:cd:a4:08:d9`; dejarla en `d8:9e:f3:3c:37:df`. **Reboot del router** para limpiar conntrack/ARP cacheado.
+
+**Diagnóstico reutilizable** (LAN local va pero público/forwards no): en el server correr
+```
+( timeout 6 tcpdump -ni enp0s25 -e 'arp or icmp' & sleep 1; ping -c4 192.168.12.1 )
+```
+Si el **ICMP reply del gateway sale con dest-MAC ≠ la del server** → IP-MAC binding equivocado en el router. NO es policy routing, NO es el server, NO es el cable.
+
+**Acceso (2026-06-25)**: `azc-root` (ProxyJump torre1) estaba roto — torre1↔.234 sin ruta. Workaround que funcionó: SSH directo desde Fumilinux (LAN, `.2`): `ssh -i ~/.ssh/id_ed25519 root@192.168.12.234`.
 
 ## ISP outbound de Fumilinux filtra :443 a 185.42.22.x
 
