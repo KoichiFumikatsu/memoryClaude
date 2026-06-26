@@ -1,11 +1,29 @@
 # IA Gen — Dashboard de generación (Torre 1) — bug watchdog y arquitectura de chains
 
-**Actualizado 2026-06-08.**
+**Actualizado 2026-06-26** (estado de código verificado contra el repo; última edición real de `dashboard.py` 2026-06-22).
 
-Generación local de imágenes anime SDXL (modelo `wai`=waiNSFWIllustrious y otros) en **Torre 1** (RX 570, `kelsielinux@100.67.216.43`, sd-server stable-diffusion.cpp :7860). El **dashboard corre en Fumilinux** como servicio systemd de usuario `iagen-dashboard` (puerto 8769), orquesta todo por SSH.
+Generación local de imágenes anime SDXL (modelo `wai`=waiNSFWIllustrious y otros) en **Torre 1** (RX 570 **4GB**, `kelsielinux@100.67.216.43`, sd-server stable-diffusion.cpp :7860). El **dashboard corre en Fumilinux** como servicio systemd de usuario `iagen-dashboard` (puerto 8769), orquesta todo por SSH.
 
-- Repo local: `/home/kelsie/projects/ia-gen` — `dashboard.py` (~2833 líneas), `velvet/forge.py`, `chains/`, `scripts/`.
+- Repo local: `/home/kelsie/projects/ia-gen` — `dashboard.py` (**~5335 líneas** a 2026-06-22; eran ~2833 el 06-14), `velvet/forge.py` (248), `chains/`, `scripts/`, `docs/`.
+- **NO es repo git** — solo backups manuales `dashboard.py.bak-*` (junio 10). Sin control de versiones: cuidado al editar, hacer copia antes de cambios grandes.
+- Fuente de verdad del cableado (servicios, recuperación tras apagón, flujos): `docs/ARQUITECTURA-GENERACION.md` (en el repo). Esta memoria solo guarda lo no-obvio/cross-session.
 - Tras editar `dashboard.py` o `velvet/forge.py`: `systemctl --user restart iagen-dashboard` (Python cachea `import forge`; sin restart sigue la versión vieja).
+
+## Estado actual (2026-06-22): ya no es solo un generador, es pipeline completo de generación→publicación
+El dashboard creció ~88% en líneas absorbiendo todo el post-proceso. Subsistemas añadidos (todos en `dashboard.py`, endpoints `/api/*`):
+- **Captions multilingües** (`claude_caption` + `ollama_caption`): SIEMPRE 3 idiomas (ja/en/es), 1 línea por idioma; el usuario elige cuál al publicar. Más hashtags y alt-text.
+- **Metadata Pixiv** (`build_pixiv_meta`): `{title, tags}` estilo Pixiv (japonés primero, sin `#`, máx 10) + `desc`=caption multilingüe sin hashtags.
+- **Marca de agua** (`watermark_image`): branding `@KelsieDark` / Pixiv `kelsie_dark`, editable. Endpoint `/api/watermark` + `/api/watermark_text`.
+- **Estado "publicado"** por imagen (`is_published`/`toggle_published`) y **rating embebido en el PNG** (`embedded_rating`/`set_image_rating`) con overrides.
+- **Hires fix** (`run_hiresfix`, cola `hfix` + sugerencia de denoise/prompt vía Claude `hfix_suggest`). El hires es el **pico de presión de VRAM** del pipeline en la GPU de 4GB → pre-flight exige sd-server en `wai` e idle. `HIRES_BUDGET="1280x1920"` (2.46 MP, en prueba desde 2026-06-19, un escalón abajo del máximo).
+- **Reroll / RELANZAR** (`run_reroll`, reusa el endpoint `/api/hires_run`): re-genera txt2img cada imagen marcada con su prompt/params embebidos y **seed nueva** (otra suerte de anatomía); quita score tags; sale a `<grupo>-reroll/`.
+- **Inpaint** (`run_inpaint` + máscara) y **cutout** (`run_cutout` → rembg, recortar figura/Blob).
+- **Sync UI** (`sync_list`/`run_sync`/`sync_status` + ignore list): antes el sync era solo `--sync` automático por imagen; ahora hay panel para traer carpetas desde Torre 1, ignorar y ver estado.
+- **Gestión de galería en lote**: delete/move batch, limpieza de carpetas vacías, reboot Torre.
+- **PWA**: thumbnails webp cacheados (`get_thumb`/`_cached_webp`), iconos y manifest → instalable como app.
+- **Biblioteca de prompts** (`load_library`/`save_library`, `library.json`, endpoints `library_get`/`library_set`).
+
+**Sigue siendo 3 modos** en `#gen-modal` (cajón/session/group), confirmado en el HTML (`data-mode`). `run_velvet_card` + `/api/velvet_card` existe pero NO es un 4º botón del modal (acción aparte por card).
 
 ## Arquitectura de "chains"
 Toda generación de ≥2 imágenes va como script bash lanzado desacoplado en Torre 1
