@@ -60,8 +60,10 @@ Rebuild de KelsieApp, **Fase 1 = solo finanzas**. PWA personal, single-user. Rep
 - Form actions que renderizan resultado rico: si el cliente no aplica `use:enhance`, usar
   envío nativo (sin enhance) para que el server haga SSR del resultado.
 
-## Pendiente / conflicto
+## Iconos (sin emojis)
 
-- **Emojis**: la UI de dashlife usa emojis (semáforo 🟢🔴, 📴 offline, ✓) que **chocan con
-  `feedback_no_emojis`** ("no usar emojis en ningún contexto"). Se le preguntó a Koichi si
-  quitarlos o mantenerlos por legibilidad del público mayor; sin decisión aún (2026-06-26).
+- 2026-06-26: se **quitaron todos los emojis** de la UI (cumple `feedback_no_emojis`) y se
+  reemplazaron por **Bootstrap Icons** (dependencia `bootstrap-icons`, fuente importada en
+  `+layout.svelte`). Componente `src/lib/Icon.svelte` (`<Icon name="camera-fill" />`, sin el
+  prefijo `bi-`). En mensajes/toast dinámicos se quitó el emoji y queda solo texto. La fuente
+  woff2 entra al build (cacheada por el service worker → funciona offline).
