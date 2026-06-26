@@ -38,8 +38,12 @@ Rebuild de KelsieApp, **Fase 1 = solo finanzas**. PWA personal, single-user. Rep
   "Te pasaste" se mide contra el **tope mensual**. Plata libre = saldo − cobros fijos − pendientes.
 - Cobro fijo "**pago de tarjeta**" (`tracksCardDebt`): monto = deuda actual, día fijo, y
   aviso **un día antes** por ntfy (cron diario `remindUpcoming`, anti-repetición `remindedDue`).
+- **Foto/factura**: el FAB pregunta **cámara** (tomar foto) vs **galería** (elegir
+  imagen/pantallazo de factura virtual) — dos `<input>`, solo el de cámara lleva
+  `capture="environment"`. Luego se elige banco y Claude la lee.
 - **Offline**: foto sin internet → cola IndexedDB (`src/lib/outbox.ts`); se procesa al
   reconectar. Lo usan `/capture` y el FAB foto del inicio.
+- Cobros fijos tienen selector de dueño (Yo/otros) como el alta manual.
 - Owners: `Yo` y otros (Mar). `own_names` (auto-traspaso): KOICHI FUMIKATSU,
   LUIS IGNACIO BURITICA. `credit_accounts`: Nu. Trabajo paga Anthropic/Claude/GitHub (excluidos).
 
@@ -55,3 +59,9 @@ Rebuild de KelsieApp, **Fase 1 = solo finanzas**. PWA personal, single-user. Rep
   como key en listas estáticas que no se reordenan.
 - Form actions que renderizan resultado rico: si el cliente no aplica `use:enhance`, usar
   envío nativo (sin enhance) para que el server haga SSR del resultado.
+
+## Pendiente / conflicto
+
+- **Emojis**: la UI de dashlife usa emojis (semáforo 🟢🔴, 📴 offline, ✓) que **chocan con
+  `feedback_no_emojis`** ("no usar emojis en ningún contexto"). Se le preguntó a Koichi si
+  quitarlos o mantenerlos por legibilidad del público mayor; sin decisión aún (2026-06-26).
