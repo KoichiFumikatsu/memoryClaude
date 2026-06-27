@@ -32,6 +32,11 @@ El dashboard creció ~88% en líneas absorbiendo todo el post-proceso. Subsistem
 - **Token de Civitai (cuenta "KelsieTL"):** vive en `~/.config/civitai_token` de **Torre 1** (32 chars, archivo suelto — NO en `.env` ni en `~/.config/iagen/env`, que solo tiene ANTHROPIC_API_KEY). Descarga de modelos gated: `TOKEN=$(cat ~/.config/civitai_token); aria2c -x8 -s8 -d ~/apps/sdcpp/models/checkpoints "https://civitai.com/api/download/models/<versionId>?token=$TOKEN"`. versionIds: v17=2883731, v16=2514310, v15=2167369, v14=1761560 (modelo Civitai 827184).
 - Checkpoints en Torre 1 (`~/apps/sdcpp/models/checkpoints/`, 1.6TB libres): wai_v170 (default), wai_v14, NoobAI-XL-v1.1, animagine-xl-4.0-opt, ponyRealism_v22MainVAE.
 
+## REGRESIÓN v17: NaN determinista en ciertos tokens de personaje (2026-06-27)
+Primera chain grande en v17 (cajón, 112 imgs): la MAYORÍA salió bien, pero **personajes específicos revientan en ruido NaN de forma DETERMINISTA (las 2 seeds)**: confirmados **maomao_(kusuriya_no_hitorigoto)** y **rodion_(project_moon)** (ruido multicolor/rosa = latente NaN). En cajón todos comparten el mismo prompt base; solo cambia el token `(char:1.3)` → ese token dispara el NaN. NO es por paréntesis (sonetto_(reverse:1999) salió perfecta). **v14 SÍ generaba maomao bien** (colección de junio) → regresión de v17 (desborde fp16). Caso aparte: **reze (chainsaw man)** NO es NaN, es mal render → reroll con otra seed lo arregla.
+**Fix a probar (no aplicado):** sd-server con `--fa` (flash attention) DESACTIVADO en `~/apps/sdcpp/launch.sh` (sospechoso #1 del NaN fp16). Fallback: esos personajes en v14. Lección: validar v17 con VARIAS imágenes, no una (la prueba única pasó por suerte ~28%).
+**Detección de ruido NaN: heurísticas NO fiables** (ni stddev ni blur-ratio); la verdad la da inspección visual / el usuario.
+
 ## Arquitectura de "chains"
 Toda generación de ≥2 imágenes va como script bash lanzado desacoplado en Torre 1
 (`setsid bash -c 'nohup ./chain_X.sh > /tmp/chain_X.out 2>&1' </dev/null & disown`).
