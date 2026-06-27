@@ -25,11 +25,12 @@ El dashboard creció ~88% en líneas absorbiendo todo el post-proceso. Subsistem
 
 **Sigue siendo 3 modos** en `#gen-modal` (cajón/session/group), confirmado en el HTML (`data-mode`). `run_velvet_card` + `/api/velvet_card` existe pero NO es un 4º botón del modal (acción aparte por card).
 
-## Parámetros reales de uso (verificado 2026-06-26)
-- **Koichi genera a 30 steps**, NO al default. El default del UI sigue en `value="50"` (inputs `g-steps`/`vf-steps`/`grp-steps`) y los fallbacks de Python también (`steps=50`) → baja a 30 a mano cada vez. Hires/inpaint hardcodean `--steps 50` (líneas ~1211/1299). CFG default 6.5.
-- **Rendimiento real: ~11 min/imagen a 30 steps** en la Torre 1 actual (RX 570 4GB). (La estimación vieja de "~7-8 min" en [[hardware-3-torres]] era optimista.)
-- **Modelo activo:** `waiNSFWIllustrious_v14` (flag `wai` en switch-model.sh). Familia Illustrious va hoy por **v17** (15-30 steps recomendados + autocorrige manos/pies en hires + LoRAs v16 compatibles). v17 es drop-in en sd.cpp (mismo SDXL ~6.5GB); único camino para acelerar local = bajar steps con v17. NO sube el techo de 4GB VRAM.
-- Checkpoints en Torre 1 (`~/apps/sdcpp/models/checkpoints/`, disco con 1.6TB libres): wai_v14, NoobAI-XL-v1.1, animagine-xl-4.0-opt, ponyRealism_v22MainVAE (todos ~6.5-6.7GB).
+## Parámetros reales de uso (actualizado 2026-06-26)
+- **Modelo DEFAULT ahora: WAI Illustrious v17** (`waiIllustriousSDXL_v170.safetensors`, 6.94 GB), instalado 2026-06-26. `sdcpp.service` ExecStart apunta a v170 → arranca con v17 en boot. Flag `wai17` en switch-model.sh. **v14 conservado** como flag `wai` (`waiNSFWIllustrious_v14`) para comparar.
+- v17 = misma familia Illustrious NSFW (4 rating tags general/sensitive/nsfw/explicit, sin censura, R18G por tags Danbooru). Mejoras vs v14: **15-30 steps** (antes ~30), autocorrige manos/pies en hires fix, LoRAs de v16 compatibles. Drop-in en sd.cpp (mismo SDXL); NO sube el techo de 4GB VRAM.
+- **Steps default bajado de 50 → 20** (2026-06-26) para v17: UI (`g-steps`/`vf-steps`/`grp-steps` `value="20"`) + fallbacks Python (`steps=20` en run_generate/character_session/group). Hires/inpaint SIGUEN hardcodeados a `--steps 50` (líneas ~1211/1299). CFG default 6.5. **Pendiente validar visualmente que 20 steps en v17 dan calidad suficiente** (a 30 steps v14 daba ~11 min/img; 20 en v17 debería ~6-7 min).
+- **Token de Civitai (cuenta "KelsieTL"):** vive en `~/.config/civitai_token` de **Torre 1** (32 chars, archivo suelto — NO en `.env` ni en `~/.config/iagen/env`, que solo tiene ANTHROPIC_API_KEY). Descarga de modelos gated: `TOKEN=$(cat ~/.config/civitai_token); aria2c -x8 -s8 -d ~/apps/sdcpp/models/checkpoints "https://civitai.com/api/download/models/<versionId>?token=$TOKEN"`. versionIds: v17=2883731, v16=2514310, v15=2167369, v14=1761560 (modelo Civitai 827184).
+- Checkpoints en Torre 1 (`~/apps/sdcpp/models/checkpoints/`, 1.6TB libres): wai_v170 (default), wai_v14, NoobAI-XL-v1.1, animagine-xl-4.0-opt, ponyRealism_v22MainVAE.
 
 ## Arquitectura de "chains"
 Toda generación de ≥2 imágenes va como script bash lanzado desacoplado en Torre 1
