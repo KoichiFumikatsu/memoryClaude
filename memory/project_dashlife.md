@@ -60,6 +60,53 @@ Rebuild de KelsieApp, **Fase 1 = solo finanzas**. PWA personal, single-user. Rep
 - Form actions que renderizan resultado rico: si el cliente no aplica `use:enhance`, usar
   envío nativo (sin enhance) para que el server haga SSR del resultado.
 
+## Módulo Despensa / inventario (Fase 1 — CÓDIGO COMPLETO, FALTA DESPLEGAR)
+
+Estado al 2026-06-29 (sesión interrumpida por batería). Plan aprobado en
+`/home/kelsie/.claude/plans/ahora-ese-dash-life-precious-castle.md`.
+
+**Qué hace (Fase 1 núcleo):** inventario de mercado. Cargar items desde **foto de factura**
+(Claude visión extrae líneas → **pantalla de confirmación** edita/vincula/crea), marcar consumo
+con botones **−/+**, promedio/día + días-restantes (informativo), y **aviso ntfy** cuando un item
+llega a su **umbral fijo**. NO toca finanzas (gasto se registra aparte). Decisiones del usuario:
+umbral fijo por item, botones rápidos, confirmación de factura, despensa separada de finanzas.
+
+**Diseño forward-compat (NO construido aún):** lista de compras + reconciliación recibo↔lista/finanzas
+(`pantry_purchases.receipt_id`), calorías (`pantry_items.calories_per_unit`), recetario.
+
+**Archivos CREADOS:**
+- `src/lib/server/pantry-math.ts` + `.test.ts` — `pantryStats(rows,currentQty,threshold,today,windowDays=14)`: avgPerDay (span inclusivo desde 1er consumo), daysLeft, isLow. 5 tests verdes.
+- `src/lib/server/pantry.ts` — `pantryLowStockCheck()` con anti-spam `notified_low` (patrón remindedDue: avisa 1×/día, se re-arma al reponer).
+- `src/routes/api/pantry-receipt/+server.ts` — sube foto, Claude lee líneas, devuelve `{items,ref}` SIN persistir.
+- `src/routes/pantry/+page.{server.ts,svelte}` — lista, −/+ (action `consume`, qty firmado), `restock`, `setThreshold`, `addItem`, `removeItem` (soft-delete `active=false`).
+- `src/routes/pantry/capture/+page.{server.ts,svelte}` — foto → confirmación (name, empaques, unid/empaque, precio/empaque) → action `confirm` suma `quantity*unitsPerPack` al stock o crea item; precio/u = precio empaque / unidades.
+- `drizzle/0008_outgoing_the_phantom.sql` — migración de las 3 tablas (generada, **se aplica al reiniciar el servicio**).
+
+**Archivos EDITADOS:** `src/lib/server/db/schema.ts` (3 tablas + tipos `PantryItem/PantryPurchase/PantryConsumption`),
+`src/lib/server/claude.ts` (`PANTRY_IMG_SYSTEM/SCHEMA` + `parsePantryReceiptImageClaude`, max_tokens 3000),
+`src/lib/server/ollama.ts` (wrapper `parsePantryReceiptImage` Claude/Ollama), `src/lib/server/cron.ts`
+(llama `pantryLowStockCheck` en `dailyChecks`), `src/routes/+layout.svelte` (nav "Despensa").
+
+**Tablas (snake_case):** `pantry_items`(name,unit,category,current_qty,low_threshold,owner,notified_low,calories_per_unit?,active,created_at),
+`pantry_purchases`(item_id,qty,pack_qty,units_per_pack,unit_price?,currency,date,source,receipt_id?,created_at),
+`pantry_consumption`(item_id,qty[firmado],date,created_at).
+
+**Verificación hecha:** `npm run check` 0 errores · `npm test` 19/19 · `npm run build` OK.
+
+**⚠️ PENDIENTE AL RETOMAR (en orden):**
+1. **Desplegar**: `cd /home/kelsie/projects/dashlife && npm run build && systemctl --user restart dashlife.service` (el restart aplica la migración 0008 que crea las tablas).
+2. **Smoke en la PWA** (cerrar/reabrir para refrescar el service worker): /pantry → alta "Huevos AAA" (unit huevo, umbral 8) y "Leche deslactosada" (bolsa, umbral 2); /pantry/capture con foto de factura → confirmar líneas (units_per_pack=30 huevos) → verificar stock +30/+6 y fila en `pantry_purchases`; botón − varias veces → ver "~N/día, ~M días"; bajar al umbral → llega ntfy "Despensa baja".
+3. Marcar task #5 y #6 completas. Considerar `git`/commit del repo dashlife si el usuario lo pide (no se ha commiteado).
+
+## Fixes de finanzas de esta sesión (ya desplegados)
+
+- **Doble resta del saldo**: `accountOf` (en `recurring-math.ts`) decidía crédito por substring del
+  COMERCIO ("Minimarket NUEVA" matcheaba "nu"); ahora decide por **banco exacto** (`bank === 'nu'`).
+  Las compras de Nu son `credit` (deuda, no tocan saldo). Test en `classify.test.ts`.
+- **Botón "Ya lo pagué"** (recurrentes): `markPaid` usaba `nextMonthlyDue(día, hoy)` → no avanzaba si
+  marcabas antes del vencimiento (hoy 29 < vence 30). Fix: `from = max(hoy, next_due)`. Botón también
+  en dashboard "Lo que se viene" (postea cross-route a `/recurring?/markPaid`). Test en recurring-math.test.ts.
+
 ## Iconos (sin emojis)
 
 - 2026-06-26: se **quitaron todos los emojis** de la UI (cumple `feedback_no_emojis`) y se
