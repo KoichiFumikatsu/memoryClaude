@@ -10,6 +10,7 @@
 - **REGLA CV / hojas de vida**: en CVs y perfiles laborales mantener ubicación = **Colombia** (sigue empleado por empresa colombiana, Grupo AZC). NO poner Japón en material profesional.
 - **LinkedIn**: existe, sin actualizar — pendiente
 - **GitHub**: https://github.com/KoichiFumikatsu (repos desactualizados; Localfy no está subido — limpiar antes de enviar CV)
+- **IDENTIDAD PROFESIONAL (CV/perfiles)**: es desarrollador **BACKEND**, NO full-stack. El frontend lo hace con asistencia de IA. Presentar como "Desarrollador Backend + Infraestructura IT"; frontend (Next.js/React/TS) como complemento "con apoyo de IA", nunca como skill senior propia. Coherente con la nota de KelsieApp.
 
 ## Languages
 - Español: nativo
