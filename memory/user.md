@@ -9,6 +9,7 @@
 - **Origen**: nacido en Tokio, Japón. Vivió en Colombia (Cali) de los 5 a los 26 años; regresó a Japón hace ~2 años.
 - **REGLA CV / hojas de vida**: en CVs y perfiles laborales mantener ubicación = **Colombia** (sigue empleado por empresa colombiana, Grupo AZC). NO poner Japón en material profesional.
 - **LinkedIn**: existe, sin actualizar — pendiente
+- **GitHub**: https://github.com/KoichiFumikatsu (repos desactualizados; Localfy no está subido — limpiar antes de enviar CV)
 
 ## Languages
 - Español: nativo
