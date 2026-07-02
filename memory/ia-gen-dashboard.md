@@ -1,6 +1,20 @@
-# IA Gen — Dashboard de generación (Torre 1) — bug watchdog y arquitectura de chains
+# IA Gen — Dashboard de generación — bug watchdog y arquitectura de chains
 
-**Actualizado 2026-06-26** (estado de código verificado contra el repo; última edición real de `dashboard.py` 2026-06-22).
+## MIGRACIÓN A LA NUBE (2026-07-01): Torre 1 retirada → RunPod Serverless
+Torre 1 apagada/retirada como GPU. Generación migrada a **RunPod Serverless** (Arquitectura "Y":
+host 24/7 sin GPU sobre Tailscale + RunPod solo para cómputo; imágenes en disco local = $0 storage, 0 AUP).
+Diseño: `/home/kelsie/projects/ia-gen/docs/superpowers/specs/2026-07-01-iagen-online-y-design.md`.
+- **Repo NUEVO (git)**: `/home/kelsie/projects/iagen-online/`. El `ia-gen` viejo queda como fuente de HTML/JS a reciclar.
+- **Worker**: imagen Docker `kelsiesan/iagen-worker:v17` (Docker Hub), base `runpod/worker-comfyui:5.8.6-base`, v17 horneado (waiIllustriousSDXL_v170, Civitai versionId 2883731), **VAE fp32** (`--fp32-vae` parcheado en /start.sh + guard grep). Retorno base64 (sin S3). ~45GB.
+- **Endpoint Serverless**: `iyb4wgpoudcnf4` (24GB, max workers 1, scale-to-zero, FlashBoot).
+- **Spike PASADO 2026-07-01**: maomao SIN NaN → **el VAE fp32 en ComfyUI resuelve la regresión NaN de v17** (era overflow fp16 de sd.cpp en 4GB). **15s/img caliente** (vs ~8min RX570), ~$0.003/img, run 720 ≈ $2. Cold start 1a vez ~85s (baja los 45GB), luego cacheado.
+- Credenciales en `worker/.env` (600, gitignored). **API key RunPod + token Civitai PEGADOS en chat 2026-07-01 → ROTAR.**
+- **PENDIENTE Parte 2**: dashboard host (poller cajón, galería/modal/filtros, censura manual mosaico canvas, describir imagen vía Claude Haiku visión, watermark, publicar título es/ja). Reciclar HTML/JS del viejo. Fuera de v1: sesión/grupal, hires, reroll, inpaint, cutout, captions multi, Pixiv meta, LLM prompt-builder.
+- En esta máquina `python` no existe → usar `python3`.
+
+---
+
+**HISTÓRICO Torre 1 (retirado — lo de abajo es referencia). Actualizado 2026-06-26** (estado de código verificado contra el repo; última edición real de `dashboard.py` 2026-06-22).
 
 Generación local de imágenes anime SDXL (modelo `wai`=waiNSFWIllustrious y otros) en **Torre 1** (RX 570 **4GB**, `kelsielinux@100.67.216.43`, sd-server stable-diffusion.cpp :7860). El **dashboard corre en Fumilinux** como servicio systemd de usuario `iagen-dashboard` (puerto 8769), orquesta todo por SSH.
 
